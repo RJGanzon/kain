@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kain · Week and nutrition</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+body{margin:0}
+a{color:#141210}a:hover{color:#3D3520}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #FFFFFF; color: #141210; font-family: 'Plus Jakarta Sans', system-ui, sans-serif">
+  <div style="padding: 16px 20px 0; display: flex; flex-direction: column; gap: 16px">
+
+    <div style="display: flex; align-items: center; justify-content: space-between; height: 44px">
+      <a href="Main.dc.html" aria-label="Back" style="width: 44px; height: 44px; border-radius: 999px; background: #F6F5F1; display: flex; align-items: center; justify-content: center; text-decoration: none">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141210" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></svg>
+      </a>
+      <div style="text-align: center">
+        <div style="font-size: 15px; font-weight: 800">This week</div>
+        <div style="font-size: 12px; font-weight: 600; color: #6B665C">₱2,016 of ₱2,450</div>
+      </div>
+      <div style="width: 44px"></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px">
+      <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+        <button onClick="{{d.pick}}" aria-label="{{d.aria}}" style="height: 60px; border-radius: 16px; font-family: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; background: {{d.bg}}; border: {{d.border}}; color: #141210">
+          <span style="font-size: 11px; font-weight: 700; color: {{d.sub}}">{{d.label}}</span>
+          <span style="font-size: 13px; font-weight: 800">{{d.cost}}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <div style="border: 1px solid #ECEAE4; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: baseline; justify-content: space-between">
+        <div style="font-size: 17px; font-weight: 800">Nutrition covered</div>
+        <div style="font-size: 12px; font-weight: 600; color: #6B665C">daily average vs FNRI needs</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{nutrients}}" as="n" hint-placeholder-count="6">
+          <div style="display: grid; grid-template-columns: 82px minmax(0, 1fr) 46px; gap: 10px; align-items: center">
+            <span style="font-size: 13px; font-weight: 700">{{n.label}}</span>
+            <div style="height: 10px; border-radius: 999px; background: #F1EFE9; overflow: hidden">
+              <div style="height: 10px; border-radius: 999px; width: {{n.w}}; background: {{n.color}}"></div>
+            </div>
+            <span style="font-size: 13px; font-weight: 800; text-align: right">{{n.text}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <div style="background: #E6F4EC; border-radius: 18px; padding: 12px 14px">
+        <div style="font-size: 22px; font-weight: 800; color: #14663C">7 of 7</div>
+        <div style="font-size: 12px; font-weight: 600; color: #14663C">days with fish, meat or eggs</div>
+      </div>
+      <div style="background: #FFF4D1; border-radius: 18px; padding: 12px 14px">
+        <div style="font-size: 22px; font-weight: 800">₱62</div>
+        <div style="font-size: 12px; font-weight: 600; color: #3D3520">a day left for coffee or snacks</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 4px">
+        <div style="font-size: 17px; font-weight: 800">Shopping list</div>
+        <a href="Week.dc.html" style="font-size: 14px; font-weight: 700; text-underline-offset: 3px">All 31 · ₱2,122</a>
+      </div>
+      <sc-for list="{{shop}}" as="s" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #ECEAE4">
+          <div style="width: 24px; height: 24px; border-radius: 8px; border: 2px solid #D6D2C8; box-sizing: border-box; flex: none"></div>
+          <div style="flex: 1; min-width: 0">
+            <div style="font-size: 15px; font-weight: 700">{{s.name}}</div>
+            <div style="font-size: 12px; color: #6B665C">{{s.qty}}</div>
+          </div>
+          <div style="font-size: 15px; font-weight: 800">{{s.price}}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <nav aria-label="Main" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; background: #FFFFFF; border-top: 1px solid #ECEAE4; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 8px 12px 20px; box-sizing: border-box">
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #141210; font-size: 11px; font-weight: 800">
+      <span style="width: 56px; height: 30px; border-radius: 999px; background: #FFC83A; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#141210" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18a9 9 0 0 1-18 0Z"></path><path d="M8 7c0-1.5 1-2 1-3.5M12 7c0-1.5 1-2 1-3.5M16 7c0-1.5 1-2 1-3.5"></path></svg></span>
+      Plan
+    </a>
+    <a href="Eatery.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #6B665C; font-size: 11px; font-weight: 700">
+      <span style="width: 56px; height: 30px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B665C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"></path><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"></path><path d="M5 11v9h14v-9"></path><path d="M10 20v-5h4v5"></path></svg></span>
+      Eatery
+    </a>
+    <a href="Log.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #6B665C; font-size: 11px; font-weight: 700">
+      <span style="width: 56px; height: 30px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B665C" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></span>
+      Log
+    </a>
+    <a href="Prices.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #6B665C; font-size: 11px; font-weight: 700">
+      <span style="width: 56px; height: 30px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B665C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"></path><circle cx="7.5" cy="7.5" r="1.4"></circle></svg></span>
+      Prices
+    </a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { day: 0 };
+  }
+  renderVals() {
+    const costs = [291, 258, 250, 305, 289, 312, 311];
+    const names = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'];
+    const days = costs.map((c, i) => {
+      const on = this.state.day === i;
+      return {
+        label: names[i], cost: '₱' + c, aria: names[i] + ', ₱' + c,
+        bg: on ? '#FFC83A' : '#FFFFFF', border: on ? '0' : '1px solid #ECEAE4', sub: on ? '#3D3520' : '#6B665C',
+        pick: () => this.setState({ day: i }),
+      };
+    });
+    const tone = (v) => (v >= 90 ? '#1A7F4B' : v >= 60 ? '#D98B00' : '#C23A2B');
+    const nutrients = [['Energy', 78], ['Protein', 89], ['Iron', 54], ['Vitamin A', 100], ['Calcium', 40], ['Vitamin C', 88]]
+      .map(([label, v]) => ({ label, w: Math.min(v, 100) + '%', color: tone(v), text: v >= 100 ? '100%+' : v + '%' }));
+    const shop = [
+      { name: 'Atay ng manok', qty: '1.25 kg · Contributor price', price: '₱213' },
+      { name: 'Sardinas', qty: '4 cans', price: '₱104' },
+      { name: 'Kangkong', qty: '4 tali', price: '₱80' },
+    ];
+    return { days, nutrients, shop };
+  }
+}
+</script>
+</body>
+</html>

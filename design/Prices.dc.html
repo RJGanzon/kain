@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kain · Market prices</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+body{margin:0}
+a{color:#141210}a:hover{color:#3D3520}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #FFFFFF; color: #141210; font-family: 'Plus Jakarta Sans', system-ui, sans-serif">
+  <div style="padding: 24px 20px 0; display: flex; flex-direction: column; gap: 14px">
+
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <h1 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em">Today's prices</h1>
+      <div style="font-size: 13px; font-weight: 600; color: #6B665C">Pampang Market · free for everyone</div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; background: #F6F5F1; border-radius: 14px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B665C" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <label for="priceSearch" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search prices</label>
+      <input id="priceSearch" placeholder="Search kamatis, itlog, bangus" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-family: inherit; font-size: 15px; font-weight: 600; color: #141210">
+    </div>
+
+    <div style="display: flex; gap: 8px; overflow: hidden">
+      <sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
+        <button onClick="{{f.pick}}" style="height: 36px; padding: 0 14px; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 700; flex: none; background: {{f.bg}}; color: {{f.fg}}; border: {{f.border}}">{{f.label}}</button>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11px; font-weight: 700; color: #6B665C">
+      <span>Sources, in order:</span>
+      <span style="border-radius: 999px; padding: 3px 8px; background: #E6F4EC; color: #14663C">1 Contributor</span>
+      <span style="border-radius: 999px; padding: 3px 8px; background: #FFF4D1; color: #5C4600">2 DA market</span>
+      <span style="border-radius: 999px; padding: 3px 8px; background: #F1EFE9; color: #3D3A33">3 DA average</span>
+      <span style="border-radius: 999px; padding: 2px 7px; border: 1px dashed #8A857A; color: #57534A">4 Estimate</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column">
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #ECEAE4">
+          <div style="flex: 1; min-width: 0">
+            <div style="font-size: 15px; font-weight: 700">{{r.name}}</div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px">
+              <span style="font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 7px; background: {{r.tierBg}}; color: {{r.tierFg}}; border: {{r.tierBorder}}">{{r.tier}}</span>
+              <span style="font-size: 12px; color: #6B665C">{{r.date}}</span>
+            </div>
+          </div>
+          <div style="text-align: right">
+            <div style="font-size: 15px; font-weight: 800">{{r.price}}<span style="font-size: 12px; font-weight: 600; color: #6B665C">{{r.unit}}</span></div>
+            <span style="display: inline-block; margin-top: 2px; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 1px 7px; background: {{r.chBg}}; color: {{r.chFg}}">{{r.ch}}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <nav aria-label="Main" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; background: #FFFFFF; border-top: 1px solid #ECEAE4; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 8px 12px 20px; box-sizing: border-box">
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #6B665C; font-size: 11px; font-weight: 700">
+      <span style="width: 56px; height: 30px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B665C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18a9 9 0 0 1-18 0Z"></path><path d="M8 7c0-1.5 1-2 1-3.5M12 7c0-1.5 1-2 1-3.5M16 7c0-1.5 1-2 1-3.5"></path></svg></span>
+      Plan
+    </a>
+    <a href="Eatery.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #6B665C; font-size: 11px; font-weight: 700">
+      <span style="width: 56px; height: 30px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B665C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"></path><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"></path><path d="M5 11v9h14v-9"></path><path d="M10 20v-5h4v5"></path></svg></span>
+      Eatery
+    </a>
+    <a href="Log.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #6B665C; font-size: 11px; font-weight: 700">
+      <span style="width: 56px; height: 30px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B665C" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></span>
+      Log
+    </a>
+    <a href="Prices.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #141210; font-size: 11px; font-weight: 800">
+      <span style="width: 56px; height: 30px; border-radius: 999px; background: #FFC83A; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#141210" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"></path><circle cx="7.5" cy="7.5" r="1.4"></circle></svg></span>
+      Prices
+    </a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: 'All' };
+  }
+  renderVals() {
+    const TIER = {
+      contrib: ['Contributor', '#E6F4EC', '#14663C', '0'],
+      log: ['Your log', '#E6F4EC', '#14663C', '0'],
+      da: ['DA market', '#FFF4D1', '#5C4600', '0'],
+      avg: ['DA average', '#F1EFE9', '#3D3A33', '0'],
+      est: ['Estimate', 'transparent', '#57534A', '1px dashed #8A857A'],
+    };
+    const data = [
+      ['Kamatis', 'Vegetables', 'contrib', 'Oct 5', 120, '/kg', 41],
+      ['Sibuyas', 'Vegetables', 'da', 'Oct 2', 160, '/kg', 23],
+      ['Galunggong', 'Fish', 'contrib', 'Oct 5', 280, '/kg', 12],
+      ['Bangus', 'Fish', 'log', 'Oct 4', 240, '/kg', 7],
+      ['Kangkong', 'Vegetables', 'log', 'Today', 20, '/tali', 11],
+      ['Kalabasa', 'Vegetables', 'contrib', 'Oct 5', 55, '/kg', -8],
+      ['Manok', 'Meat', 'da', 'Oct 2', 210, '/kg', 5],
+      ['Atay ng manok', 'Meat', 'est', 'Sep 28', 170, '/kg', 0],
+      ['Tilapia', 'Fish', 'da', 'Oct 2', 150, '/kg', 3],
+      ['Mantika', 'Pantry', 'avg', 'Oct 2', 95, '/L', 3],
+      ['Toyo', 'Pantry', 'est', 'Sep 28', 45, '/L', 0],
+    ];
+    const f = this.state.filter;
+    const rows = data.filter((d) => f === 'All' || d[1] === f).slice(0, 8).map(([name, cat, t, date, price, unit, ch]) => {
+      const tier = TIER[t];
+      const up = ch > 0;
+      return {
+        name, date, unit, price: '₱' + price,
+        tier: tier[0], tierBg: tier[1], tierFg: tier[2], tierBorder: tier[3],
+        ch: ch === 0 ? 'steady' : (up ? '▲ ' : '▼ ') + Math.abs(ch) + '%',
+        chBg: ch === 0 ? '#F1EFE9' : up ? (ch >= 15 ? '#FDECEA' : '#FFF1DA') : '#E6F4EC',
+        chFg: ch === 0 ? '#57534A' : up ? (ch >= 15 ? '#8E1F14' : '#8A4F00') : '#14663C',
+      };
+    });
+    const filters = ['All', 'Fish', 'Meat', 'Vegetables', 'Pantry'].map((label) => {
+      const on = label === f;
+      return {
+        label,
+        bg: on ? '#141210' : '#FFFFFF', fg: on ? '#FFFFFF' : '#141210', border: on ? '0' : '1px solid #ECEAE4',
+        pick: () => this.setState({ filter: label }),
+      };
+    });
+    return { rows, filters };
+  }
+}
+</script>
+</body>
+</html>

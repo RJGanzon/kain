@@ -1,0 +1,29 @@
+# deps and builds
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# tests
+playwright-report/
+test-results/
+
+# env and secrets
+.env
+.env.*
+!.env.example
+supabase/.temp/
+supabase/.branches/
+
+# the kit archive (its contents are committed unpacked)
+kain-claude-code-kit.zip
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.vercel

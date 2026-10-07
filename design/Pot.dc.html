@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kain · Adobong Manok pot</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+body{margin:0}
+a{color:#141210}a:hover{color:#3D3520}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #FFFFFF; color: #141210; font-family: 'Plus Jakarta Sans', system-ui, sans-serif">
+  <div style="padding: 16px 20px 0; display: flex; flex-direction: column; gap: 16px">
+
+    <div style="display: flex; align-items: center; justify-content: space-between; height: 44px">
+      <a href="Eatery.dc.html" aria-label="Back" style="width: 44px; height: 44px; border-radius: 999px; background: #F6F5F1; display: flex; align-items: center; justify-content: center; text-decoration: none">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141210" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></svg>
+      </a>
+      <div style="text-align: center">
+        <div style="font-size: 16px; font-weight: 800">Adobong Manok</div>
+        <div style="font-size: 12px; font-weight: 600; color: #6B665C">4.0 kg pot · cooked 10:30 am</div>
+      </div>
+      <div style="width: 44px"></div>
+    </div>
+
+    <div style="background: #F6F5F1; border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center">
+        <div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6B665C">Cooked</div>
+          <div style="font-size: 24px; font-weight: 800">4.0 kg</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6B665C">Sold</div>
+          <div style="font-size: 24px; font-weight: 800">{{soldKg}} kg</div>
+        </div>
+        <div style="background: #FFFFFF; border-radius: 14px; padding: 2px 0 4px">
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6B665C">Left</div>
+          <div style="font-size: 24px; font-weight: 800">{{leftKg}} kg</div>
+        </div>
+      </div>
+      <div style="position: relative; padding-top: 18px">
+        <div style="position: absolute; top: 0; left: 40%; transform: translateX(-50%); font-size: 10px; font-weight: 800; color: #6B665C; white-space: nowrap">break-even</div>
+        <div style="height: 12px; border-radius: 999px; background: #E2DFD6; overflow: hidden">
+          <div style="height: 12px; border-radius: 999px; width: {{soldW}}; background: {{barColor}}"></div>
+        </div>
+        <div style="position: absolute; top: 15px; left: 40%; width: 2px; height: 18px; background: #141210"></div>
+      </div>
+      <div style="font-size: 13px; font-weight: 600; color: #3D3A33; text-align: center">{{soldOrders}} of 25 orders sold · {{leftOrders}} left · 1 order ≈ 160 g</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="font-size: 13px; font-weight: 700; color: #6B665C">Record a sale</div>
+      <div style="display: grid; grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr); gap: 8px">
+        <button onClick="{{minus}}" aria-label="Undo one order" style="height: 52px; border-radius: 16px; border: 1px solid #ECEAE4; background: #FFFFFF; font-family: inherit; font-size: 22px; font-weight: 700; color: #141210">−</button>
+        <button onClick="{{plus1}}" style="height: 52px; border-radius: 16px; border: 0; background: #FFC83A; font-family: inherit; font-size: 15px; font-weight: 800; color: #141210">+1 order</button>
+        <button onClick="{{plus5}}" style="height: 52px; border-radius: 16px; border: 0; background: #141210; font-family: inherit; font-size: 15px; font-weight: 800; color: #FFFFFF">+5 orders</button>
+      </div>
+    </div>
+
+    <div style="border: 1px solid #ECEAE4; border-radius: 20px; padding: 6px 16px">
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #ECEAE4; font-size: 14px">
+        <span style="font-weight: 600">Sales so far</span><span style="font-weight: 800">{{sales}}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #ECEAE4; font-size: 14px">
+        <span style="font-weight: 600">Cost of the whole pot</span><span style="font-weight: 800">−₱829</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0; border-bottom: 1px solid #ECEAE4">
+        <span style="font-size: 15px; font-weight: 800">{{profitLabel}}</span><span style="font-size: 22px; font-weight: 800; color: {{profitColor}}">{{profit}}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; font-size: 14px">
+        <span style="font-weight: 600; color: #6B665C">Estimated if the rest sells</span><span style="font-weight: 800">₱1,296</span>
+      </div>
+    </div>
+
+    <sc-if value="{{hasLeft}}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; gap: 12px; align-items: flex-start; background: #FFF4D1; border-radius: 18px; padding: 12px 14px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141210" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex: none; margin-top: 1px"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z"></path></svg>
+        <div style="font-size: 13px; font-weight: 600; color: #3D3520; line-height: 1.4">{{tip}}</div>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; bottom: 28px">
+    <a href="Eatery.dc.html" style="height: 56px; border-radius: 18px; background: #141210; color: #FFFFFF; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 16px; font-weight: 800">Done</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { n: 20 };
+  }
+  renderVals() {
+    // Sample pot: 4.0 kg, 25 orders of 160 g, ₱85 an order, ₱829 ingredient cost for the pot.
+    const ORDERS = 25, KG = 0.16, PRICE = 85, POT_COST = 829.25, LATE_PRICE = 60;
+    const n = this.state.n;
+    const sales = n * PRICE;
+    const profit = sales - POT_COST;
+    const left = ORDERS - n;
+    const peso = (v) => '₱' + Math.round(Math.abs(v)).toLocaleString('en-PH');
+    const set = (v) => () => this.setState({ n: Math.max(0, Math.min(ORDERS, v)) });
+    return {
+      soldKg: (n * KG).toFixed(1),
+      leftKg: ((ORDERS - n) * KG).toFixed(1),
+      soldOrders: n,
+      leftOrders: left,
+      soldW: Math.round((n / ORDERS) * 100) + '%',
+      barColor: profit >= 0 ? '#141210' : '#D98B00',
+      sales: peso(sales),
+      profit: (profit < 0 ? '−' : '') + peso(profit),
+      profitLabel: profit >= 0 ? 'Profit so far' : 'Still to break even',
+      profitColor: profit >= 0 ? '#14663C' : '#8A4F00',
+      hasLeft: left > 0,
+      tip: left + ' orders (' + (left * KG).toFixed(1) + ' kg) left. Selling them at ₱' + LATE_PRICE + ' after 6 pm still brings in ' + peso(left * LATE_PRICE) + ' instead of going to waste.',
+      minus: set(n - 1),
+      plus1: set(n + 1),
+      plus5: set(n + 5),
+    };
+  }
+}
+</script>
+</body>
+</html>
