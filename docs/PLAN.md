@@ -1,8 +1,8 @@
 # Kain build plan (Phase 1)
 
-Status: **Phase 2 done (see section 10). Waiting for your OK to start Phase 3.**
+Status: **All nine phases are built (sections 10 and 11). Not deployed yet: see section 12.**
 
-Phase 1 was approved on Oct 8, 2026. Your answers are recorded in section 9.
+Phase 1 was approved on Oct 8, 2026, and you then asked for the remaining phases in one go. Your answers are recorded in section 9.
 
 ---
 
@@ -145,7 +145,7 @@ supabase/                migrations, seed, functions/log-purchase
 tests/                   Vitest (logic) and Playwright (screens, transitions)
 ```
 
-## 7. Logic decisions (need your OK)
+## 7. Logic decisions (went ahead as proposed)
 
 **A. Shopping list over budget.** The reference planner leaves 4% headroom, but whole packs can cost more than that on small plans, so the §7.1 test can't pass with an exact port.
 - I'll keep the reference search unchanged, then check the rounded shopping total.
@@ -188,7 +188,7 @@ Each step is one commit with tests run first. I'll stop after each phase.
 
 ---
 
-## 10. Phase 2 notes
+## 10. Phase 2 notes (screens and transitions)
 
 ### What's built
 - **Screens:** all 9 screens, with sample data behind a "Sample data" label.
@@ -211,9 +211,8 @@ Each step is one commit with tests run first. I'll stop after each phase.
 - **Google and Facebook buttons.** They keep the design's placeholder circles until Phase 7, which adds the official button assets.
 
 ### Static until a later phase
-- **Dates and the plan:** Today's date ("Tuesday, October 6") and the plan itself stay the design's sample until Phase 4. Set budget saves your settings, but Today keeps showing the sample plan.
-- **Eatery "+" button:** it opens the Business plan; the 3-dish limit comes in Phase 9.
-- **Log a purchase:** "Add" only works for the example entry; the parser comes in Phase 5.
+
+All three are now real: the plan and dates come from the planner (Phase 4), the Eatery "+" button opens the add-dish sheet up to the free limit (Phases 6 and 9), and Log a purchase uses the parser (Phase 5).
 
 ### Tests
 
@@ -231,3 +230,75 @@ The browser tests cover:
 - touch targets of at least 44 px
 - a full journey with no console errors
 - transition speed with the CPU slowed 6×: every tap starts moving within 300 ms, measured at 34–254 ms
+
+---
+
+## 11. Phases 3–9: what was built
+
+| Phase | What's in it |
+|---|---|
+| 3. Data | One migration with every table in §6, with row security on all of them. A `current_prices` view gives the best accepted tier from the last 14 days, then the latest estimate, plus the price 4 weeks earlier. The seed comes from `reference/mvp/data.js`, with every price marked `estimate` and the "Sample data" label on. Generated TypeScript types. The catalog is cached on the phone (IndexedDB via Dexie) and refreshed at most every 6 hours, timed for idle moments so it never competes with a tap. |
+| 4. Family | The planner, ported to TypeScript and running in a Web Worker. It is deterministic (recipes are taken in id order) and applies decision A (headroom tightening). Set budget builds the new plan before Today slides back in. Today and Week use the live plan with real dates, and show "Budget too small" when nothing fits. |
+| 5. Log | The parser, with additions: an ingredient's own name counts as an alias, "anim na itlog 51" works, and so does "250g". Voice input tries Filipino, then English. The `log-purchase` Edge Function and the shared ±30% check. "Your log" prices appear on the phone at once. An outbox sends writes when the phone is online and signed in. |
+| 6. Eatery | Costing from today's prices (the design's per-order costs come out exactly). Menu, pots, sales, weighing the pot, and the late-price tip. Spike alerts and cheaper substitutes. The free plan's 3-dish limit. |
+| 7. Auth | Google and Facebook sign-in through Supabase Auth (PKCE), with the official logos. The role picker. Account settings in Set budget (switch role, sign out). Guest data moves into a new account, and a returning account's data comes onto a new phone. The eatery needs an account when there's a backend. |
+| 8. PWA | A Serwist service worker: the app shell and every screen are precached, page data is cached as it's used, and Supabase calls are never cached. An offline fallback page, web manifest and icons, iOS home-screen settings, the install card, and "Saved, will sync". |
+| 9. Business | "Demo: activate without payment", behind `NEXT_PUBLIC_BUSINESS_DEMO` and the database's `business_demo` flag. No real charges; GCash and Maya stay a choice. |
+
+### Decisions made along the way
+
+| Decision | Why |
+|---|---|
+| Pot detail is `/eatery/pot?id=…` | Pots are created on the phone (offline), so their ids can't be known when the site is built. |
+| `pot_sales` has a `user_id` column (not in §6) | Simple, fast row security; a trigger checks it matches the pot's owner. |
+| `prices.market_id` may be empty | A regional price (DA average, estimate) that applies to every market. |
+| `eatery_menu.extras` (gas and extras per order) | §7.3 calls it "a setting per order"; it defaults to ₱3 and can be changed per dish. |
+| Tests sign in with locally minted sessions | Real Google/Facebook logins need your OAuth apps. Email login stays off. |
+| The eatery runs on the phone only when there's no backend | So a demo copy without Supabase is still usable; with a backend it needs an account, as §8 says. |
+| "Installable" is checked with Chrome's own installability check | Lighthouse 12 removed its PWA category. |
+
+### Fixed along the way
+
+- **Planner worker under the service worker:** Turbopack's worker loader reads its setup from its URL fragment, and a cached response dropped it. It now has its own service-worker rule, covered by a test.
+- **Outbox:** it now goes round again when something is queued mid-upload.
+- **Speed:** date formatters are now made once (Week had been creating about 60 per render).
+
+### Definition of done (§11)
+
+| Item | Status |
+|---|---|
+| All 9 screens match `design/` at 390×844; no horizontal scroll at 360 px | Done. 0.4–6.9% of pixels differ (sample label, real data, lucide icons). The 360 px and 44 px touch-target checks pass. |
+| Vitest for the planner, parser and eatery maths, including the §7.3 numbers | Done. 61 unit tests, including ₱2,182 / ₱5,132 / 16.4 of 24.3 kg / ₱2,950 / ₱70. |
+| Planner is deterministic; shopping total stays within budget when no day is over | Done. Tested across 1,176 inputs, and with shuffled input. |
+| Prices show their source tier and date everywhere; sample data is labelled | Done. |
+| A guest can plan, log and view prices offline after the first visit | Done (browser test). |
+| Google and Facebook sign-in with the official assets; the role is saved | Built, and tested with test sessions. **The real logins need your OAuth apps** (section 12). |
+| Pot sales recorded offline sync when back online | Done (browser test). |
+| Unusual logged prices are saved but never change `current_prices` | Done (database test). |
+| Installable; accessibility of at least 90 on Today's plan | Done. No Chrome installability errors; Lighthouse accessibility is 100. |
+| No secrets in the client; RLS on every user table | Done. Only the public URL and publishable key reach the app; database tests check ownership. |
+
+### Running it locally
+
+| Command | What it does |
+|---|---|
+| `npm run db:start` | Starts local Supabase (Docker) with the migration and seed |
+| `supabase functions serve` | Serves `log-purchase` locally |
+| `npm run dev` | Runs the app at http://localhost:3000 (uses `.env.local`) |
+| `npx vitest run` | Unit tests (planner, parser, eatery, nav, price check) |
+| `npm run test:db` | Database and Edge Function tests (needs the two commands above) |
+| `npx playwright test` | Builds the app and runs the browser tests |
+| `PERF=1 npx playwright test --project perf` | Transition timing with the CPU slowed 6× (run on a quiet machine) |
+
+---
+
+## 12. Going live (needs you)
+
+1. **Vercel.** Run `! npx vercel login` in Claude Code, and I'll create a new project and deploy. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `NEXT_PUBLIC_BUSINESS_DEMO=1` on the project. Without the Supabase values, the deploy still works on the bundled sample prices, on the phone only.
+2. **Supabase (hosted).** Create a project, then:
+   - run `supabase link`, then `supabase db push` for the migration
+   - load the seed (`supabase/seed.sql`)
+   - run `supabase functions deploy log-purchase`
+   - in Auth → URL configuration, add `https://<your-domain>/auth/callback` as a redirect URL
+3. **Google and Facebook.** Create a Google OAuth client and a Facebook app. Both use the redirect URI `https://<project-ref>.supabase.co/auth/v1/callback`. Switch the providers on in Supabase with their keys (locally: put the keys in `supabase/.env` and set `enabled = true` in `config.toml`).
+4. **Real prices.** Load dated market prices into `prices` (contributor, DA market or DA average tiers). Then switch off `sample_prices` in `app_flags`, and the "Sample data" labels disappear.
