@@ -1,6 +1,8 @@
 # Kain build plan (Phase 1)
 
-Status: **waiting for your OK to start Phase 2.** Questions are in section 9.
+Status: **Phase 2 done (see section 10). Waiting for your OK to start Phase 3.**
+
+Phase 1 was approved on Oct 8, 2026. Your answers are recorded in section 9.
 
 ---
 
@@ -175,9 +177,57 @@ Each step is one commit with tests run first. I'll stop after each phase.
 | 8. PWA and offline | Serwist service worker · offline queue with "Saved, will sync" · install prompt | Works offline and installs to the home screen |
 | 9. Business plan (demo) | Plan flag · 3-dish limit · upgrade sheet with "Demo: activate without payment" | The upgrade flow, with no real payments |
 
-## 9. Questions
+## 9. Questions and answers
+
+**Answered Oct 8, 2026:** don't reuse the old prototype; build fresh, and create a new Vercel project (the old deployment is to be deleted). The other proposals (local Supabase for development, decisions A–E) went ahead as written.
 
 1. **Where is the existing prototype?** The prompt says it's on Vercel, but it isn't on this PC. Its repo decides two things: whether we stay on its framework, and whether we use its real dataset. A GitHub link or a clone in this folder is enough. If you don't have it handy, I'll start on Next.js with the kit's sample data, labelled "Sample data", and swap in the real dataset at Phase 3. The transition design works the same on Vite + React Router, which also supports View Transitions.
 2. **Supabase:** should I use a new project or an existing one? For development I'd run it locally (the Supabase CLI and Docker are installed), so hosted keys aren't needed until deploy. Is that OK?
 3. **OAuth apps (Phase 7):** you'll need to create a Google Cloud OAuth client and a Facebook app. I'll give you the exact redirect URLs when we get there.
 4. **Decisions A–E** in section 7: OK as proposed?
+
+---
+
+## 10. Phase 2 notes
+
+### What's built
+- **Screens:** all 9 screens, with sample data behind a "Sample data" label.
+- **Transitions:** native-style transitions as described in section 4.
+- **Interactive pieces:**
+  - the market picker sheet
+  - the budget slider and family steppers, saved on the device
+  - shopping list ticks, saved on the device
+  - week day nutrition
+  - Eatery's two views
+  - recording a sale and weighing the pot
+  - price search and filters
+
+### Where the app differs from the designs, on purpose
+- **Sample data label.** "Sample data" sits next to the date, section titles or subtitles, as rule 2 requires.
+- **Shopping list.** It shows all 31 items, grouped by category, and each row names its price source.
+- **Week nutrition.** The card shows the daily average, as in the design. Tapping a day shows that day's numbers, and tapping it again returns to the average.
+- **Weigh the pot instead.** Pot detail has this link (§5.7), which opens a sheet.
+- **Tabular numbers.** Prices use tabular numbers (§4), so Today's lunch row wraps one word earlier than the design.
+- **Google and Facebook buttons.** They keep the design's placeholder circles until Phase 7, which adds the official button assets.
+
+### Static until a later phase
+- **Dates and the plan:** Today's date ("Tuesday, October 6") and the plan itself stay the design's sample until Phase 4. Set budget saves your settings, but Today keeps showing the sample plan.
+- **Eatery "+" button:** it opens the Business plan; the 3-dish limit comes in Phase 9.
+- **Log a purchase:** "Add" only works for the example entry; the parser comes in Phase 5.
+
+### Tests
+
+| Command | What it runs |
+|---|---|
+| `npx vitest run` | Unit tests (nav history) |
+| `npx playwright test` | Builds, starts the app and runs the browser tests (below) |
+| `node scripts/render-designs.mjs` | Re-renders the design references |
+| `FRAMES=1 npx playwright test frames` | Saves mid-transition frames |
+
+The browser tests cover:
+- every transition kind and history path
+- each screen against its design at 390×844
+- no horizontal scroll at 360 px
+- touch targets of at least 44 px
+- a full journey with no console errors
+- transition speed with the CPU slowed 6×: every tap starts moving within 300 ms, measured at 34–254 ms
