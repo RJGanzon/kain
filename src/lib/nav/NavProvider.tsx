@@ -7,6 +7,7 @@ import { onSessionChange } from '@/lib/auth/session';
 import { startSync } from '@/lib/data/outbox';
 import { preloadEatery } from '@/lib/eatery/store';
 import { preloadLogs } from '@/lib/log/store';
+import { captureInstallPrompt } from '@/lib/pwa/install';
 import { bindRouter, initNav, onPopState } from './nav';
 import { WARM_ROUTES } from './routes';
 import { signalCommit } from './transition';
@@ -49,6 +50,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
     preloadLogs();
     preloadEatery();
     startSync();
+    captureInstallPrompt();
     const stop = onSessionChange((s) => {
       if (s.session) ensureAccountSynced();
     });

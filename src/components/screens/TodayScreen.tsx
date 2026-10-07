@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Check, ChevronDown, ChevronRight, MapPin, Moon, ShoppingBag, SlidersHorizontal, Sun, Sunrise } from 'lucide-react';
 import { Suspense, useCallback, useMemo, type ReactNode } from 'react';
+import { InstallCard } from '@/components/InstallCard';
 import { IconTile, Overline } from '@/components/ui/bits';
 import { iconButtonClass } from '@/components/ui/IconButton';
 import { Logo } from '@/components/ui/Logo';
@@ -177,6 +178,8 @@ export function TodayScreen() {
           </div>
           <ChevronRight size={18} strokeWidth={2.4} aria-hidden="true" />
         </NavLink>
+
+        <InstallCard />
       </div>
 
       <Suspense fallback={null}>
