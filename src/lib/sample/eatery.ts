@@ -25,6 +25,42 @@ export const SAMPLE_DISHES: SampleDish[] = [
   { id: 'pritong-galunggong', name: 'Pritong Galunggong', cookedKg: 2.4, soldKg: 1.8, price: 75, cost: 41.95, orderKg: 0.12, latePrice: 55, cookedAt: '11:15 am' },
 ];
 
+/** A pot's numbers (the design's sample maths; Phase 6 ports the real costing). */
+export function potNumbers(d: SampleDish, soldOrders?: number) {
+  const orders = Math.round(d.cookedKg / d.orderKg);
+  const sold = Math.max(0, Math.min(orders, soldOrders ?? Math.round(d.soldKg / d.orderKg)));
+  const potCost = orders * d.cost;
+  const sales = sold * d.price;
+  return {
+    orders,
+    sold,
+    left: orders - sold,
+    potCost,
+    sales,
+    profitNow: sales - potCost,
+    ifAllSells: orders * d.price - potCost,
+    breakEven: Math.ceil(potCost / d.price),
+  };
+}
+
+/** Today's totals across pots: profit right now counts all food cooked as cost. */
+export function dayTotals(dishes: SampleDish[]) {
+  let cookedKg = 0;
+  let soldKg = 0;
+  let sales = 0;
+  let cost = 0;
+  let full = 0;
+  for (const d of dishes) {
+    const n = potNumbers(d);
+    cookedKg += d.cookedKg;
+    soldKg += d.soldKg;
+    sales += n.sales;
+    cost += n.potCost;
+    full += n.orders * d.price;
+  }
+  return { cookedKg, soldKg, sales, cost, profitNow: sales - cost, ifAllSells: full - cost, leftKg: cookedKg - soldKg, leftValue: full - sales };
+}
+
 /** The design's pots list shows the first five dishes. */
 export const SAMPLE_POTS = SAMPLE_DISHES.slice(0, 5);
 

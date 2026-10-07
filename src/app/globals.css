@@ -103,52 +103,55 @@
 /* ------------------------------------------------------------------
    Base: an app shell, not a web page.
    ------------------------------------------------------------------ */
-html,
-body {
-  height: 100%;
-}
+/* In the base layer so Tailwind utilities (text-white on a link) always win. */
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
 
-html {
-  background: var(--bg);
-  -webkit-text-size-adjust: 100%;
-  /* The designs use the browser default; set line-height explicitly where a design does. */
-  line-height: normal;
-}
+  html {
+    background: var(--bg);
+    -webkit-text-size-adjust: 100%;
+    /* The designs use the browser default; set line-height explicitly where a design does. */
+    line-height: normal;
+  }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-variant-numeric: tabular-nums;
-  -webkit-font-smoothing: antialiased;
-  -webkit-tap-highlight-color: transparent;
-  overscroll-behavior: none;
-  overflow: hidden;
-}
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+    overflow: hidden;
+  }
 
-a {
-  color: inherit;
-}
+  a {
+    color: inherit;
+  }
 
-button,
-a,
-input,
-label,
-[role='button'] {
-  touch-action: manipulation;
-}
+  button,
+  a,
+  input,
+  label,
+  [role='button'] {
+    touch-action: manipulation;
+  }
 
-button {
-  font-family: inherit;
-  cursor: pointer;
-}
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
 
-h1,
-h2,
-h3,
-p {
-  margin: 0;
+  h1,
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
 }
 
 /* The phone-sized app column. Fills a phone; centred on a wide screen. */
@@ -197,7 +200,7 @@ p {
   border: 0;
 }
 
-/* Grow a small control's hit area to at least 44px without changing its look. */
+/* Grow a small control's hit area to at least 44×44 px without changing its look. */
 .hit {
   position: relative;
 }
@@ -205,7 +208,61 @@ p {
 .hit::after {
   content: '';
   position: absolute;
-  inset: -6px -2px;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+/* Budget slider (Set budget): 6 px track, ink fill, 24 px yellow knob. */
+.range {
+  --fill: 50%;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  /* 44 px to touch; the -10 px margins keep the design's 24 px row. */
+  height: 44px;
+  margin: -10px 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--ink) var(--fill), var(--track-strong) var(--fill));
+}
+
+.range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--ink) var(--fill), var(--track-strong) var(--fill));
+}
+
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -9px;
+  border-radius: 999px;
+  background: var(--brand);
+  border: 3px solid var(--ink);
+  box-sizing: border-box;
+  transition: transform var(--dur-press) var(--ease-emphasized);
+}
+
+.range::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--brand);
+  border: 3px solid var(--ink);
+  box-sizing: border-box;
+}
+
+.range:active::-webkit-slider-thumb {
+  transform: scale(1.15);
 }
 
 :focus-visible {

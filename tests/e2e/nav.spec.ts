@@ -4,11 +4,13 @@ import { recordTransitions, screenTitle, settled, transitions } from './helpers'
 test.describe('screen transitions', () => {
   test('push slides Week in, browser Back pops it, Today keeps its scroll', async ({ page }) => {
     const errors = await recordTransitions(page);
+    // A short phone, so Today has room to scroll.
+    await page.setViewportSize({ width: 390, height: 640 });
     await page.goto('/plan');
     await settled(page, '/plan');
 
     const todayScroll = page.locator('section[data-screen="tab"] [data-scroll]');
-    await todayScroll.evaluate((el) => (el.scrollTop = 300));
+    await todayScroll.evaluate((el) => (el.scrollTop = 150));
 
     // Dispatch the tap: Playwright's click() would scroll the link into view first.
     await page.getByRole('link', { name: 'See week' }).dispatchEvent('click');
@@ -19,7 +21,7 @@ test.describe('screen transitions', () => {
     await page.goBack();
     await settled(page, '/plan');
     await expect(page.locator('section[data-screen="tab"]')).not.toHaveAttribute('data-covered', '');
-    expect(await todayScroll.evaluate((el) => el.scrollTop)).toBe(300);
+    expect(await todayScroll.evaluate((el) => el.scrollTop)).toBe(150);
 
     expect(await transitions(page)).toEqual(['push', 'pop']);
     expect(errors).toEqual([]);
@@ -97,9 +99,9 @@ test.describe('screen transitions', () => {
     await recordTransitions(page);
     await page.goto('/eatery');
     await settled(page, '/eatery');
-    await page.getByRole('link', { name: 'Business plan' }).click();
+    await page.getByRole('link', { name: 'Business', exact: true }).click();
     await settled(page, '/business');
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: 'Close' }).click();
     await settled(page, '/eatery');
     expect(await transitions(page)).toEqual(['sheet-up', 'sheet-down']);
   });

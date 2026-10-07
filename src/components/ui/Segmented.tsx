@@ -54,7 +54,7 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={on}
             onClick={() => !on && onChange(o.value)}
-            className={cn('press relative z-[1] rounded-full text-[14px] font-bold text-ink')}
+            className={cn('press hit relative z-[1] rounded-full text-[14px] font-bold text-ink')}
             style={{ height }}
           >
             {o.label}
