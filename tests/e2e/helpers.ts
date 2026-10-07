@@ -7,6 +7,9 @@ export async function recordTransitions(page: Page): Promise<string[]> {
     if (msg.type() === 'error') errors.push(msg.text());
   });
   page.on('pageerror', (err) => errors.push(err.message));
+  page.on('response', (res) => {
+    if (res.status() >= 500) errors.push(`${res.status()} ${res.request().method()} ${res.url()}`);
+  });
   await page.addInitScript(() => {
     const w = window as unknown as { __vt: string[] };
     w.__vt = [];

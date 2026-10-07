@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
+import { AccountSection } from '@/components/auth/AccountSection';
 import { useState, type CSSProperties } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Segmented } from '@/components/ui/Segmented';
@@ -127,6 +128,8 @@ export function SetupScreen() {
             ]}
           />
         </div>
+
+        <AccountSection />
       </div>
     </Screen>
   );

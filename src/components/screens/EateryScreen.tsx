@@ -4,6 +4,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { ChevronRight, CookingPot, Lock, Plus, TrendingUp } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { EaterySignIn } from '@/components/auth/EaterySignIn';
 import { IconTile } from '@/components/ui/bits';
 import { Button } from '@/components/ui/Button';
 import { iconButtonClass } from '@/components/ui/IconButton';
@@ -12,6 +13,7 @@ import { NumberField, toNumber } from '@/components/ui/NumberField';
 import { Pill } from '@/components/ui/Pill';
 import { Segmented as SegmentedControl } from '@/components/ui/Segmented';
 import { SourceNote } from '@/components/ui/SourceNote';
+import { useSession } from '@/lib/auth/session';
 import { cn } from '@/lib/cn';
 import { useCatalog } from '@/lib/data/catalog';
 import { marginTone, spikeAlerts, substitutes } from '@/lib/eatery/math';
@@ -24,6 +26,7 @@ import { nav } from '@/lib/nav/nav';
 import { Screen } from '@/lib/nav/Screen';
 import { Sheet } from '@/lib/nav/Sheet';
 import { runTransition } from '@/lib/nav/transition';
+import { backendConfigured } from '@/lib/supabase/client';
 import { shortName } from '@/lib/planner/describe';
 
 type View = 'today' | 'menu';
@@ -48,6 +51,11 @@ export function EateryScreen() {
   const data = useEatery();
   const catalog = useCatalog();
   const hydrated = useHydrated();
+  const { ready, session } = useSession();
+  // With a backend, the eatery needs an account; without one (a demo copy) it runs on this phone only.
+  const gated = hydrated && backendConfigured();
+  const needsSignIn = gated && ready && !session;
+  const waiting = gated && !ready;
   const market = catalog.markets.find((m) => m.id === catalog.marketId);
   const atLimit = tier === 'free' && data.dishes.length >= FREE_DISH_LIMIT;
   const switchTo = (next: View) => void runTransition(next === 'menu' ? 'seg-next' : 'seg-prev', () => flushSync(() => setView(next)));
@@ -73,12 +81,16 @@ export function EateryScreen() {
             </div>
             <div className="min-h-[17px] text-[13px] font-semibold text-muted">{hydrated ? headerLine(market?.name) : null}</div>
           </div>
-          <NavLink href={addHref} kind="sheet-up" aria-label="Add dish" className={iconButtonClass('ink')}>
-            <Plus size={20} strokeWidth={2.6} aria-hidden="true" />
-          </NavLink>
+          {needsSignIn ? null : (
+            <NavLink href={addHref} kind="sheet-up" aria-label="Add dish" className={iconButtonClass('ink')}>
+              <Plus size={20} strokeWidth={2.6} aria-hidden="true" />
+            </NavLink>
+          )}
         </header>
 
-        {hydrated && data.dishes.length === 0 ? (
+        {waiting ? null : needsSignIn ? (
+          <EaterySignIn />
+        ) : hydrated && data.dishes.length === 0 ? (
           <FirstDish />
         ) : (
           <>

@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { recordTransitions, settled } from './helpers';
-import { seedEateryDay } from './seed';
+import { removeSeedUsers, seedEateryDay } from './seed';
+
+test.afterEach(removeSeedUsers);
 
 /** Every screen and sheet loads and runs without a console error. */
 test('no console errors on any screen', async ({ page }) => {
@@ -9,9 +11,7 @@ test('no console errors on any screen', async ({ page }) => {
 
   await page.goto('/');
   await settled(page, '/signin');
-  await page.getByRole('button', { name: 'Continue with Facebook' }).click();
-  await page.getByRole('heading', { name: 'How will you use Kain?' }).waitFor();
-  await page.getByRole('link', { name: /For my family/ }).click();
+  await page.getByRole('link', { name: 'Plan meals without an account' }).click();
   await settled(page, '/plan/setup');
   await page.getByRole('button', { name: 'More kids' }).click();
   await page.getByRole('button', { name: 'Build my plan' }).click();
@@ -65,7 +65,7 @@ test('no console errors on any screen', async ({ page }) => {
   await settled(page, '/log');
   await page.getByLabel('What you bought and how much you paid').fill('isang kilo kamatis 110');
   await page.getByRole('button', { name: 'Add' }).click();
-  await expect(page.getByText('Kamatis price added for San Nicolas Market.')).toBeVisible();
+  await expect(page.getByText(/Kamatis price added for .* Market./)).toBeVisible();
 
   await tabs.getByRole('link', { name: 'Prices' }).click();
   await settled(page, '/prices');

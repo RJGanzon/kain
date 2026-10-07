@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { recordTransitions, screenTitle, settled, transitions } from './helpers';
-import { seedEateryDay } from './seed';
+import { removeSeedUsers, seedEateryDay } from './seed';
+
+test.afterEach(removeSeedUsers);
 
 test.describe('screen transitions', () => {
   test('push slides Week in, browser Back pops it, Today keeps its scroll', async ({ page }) => {
@@ -89,11 +91,14 @@ test.describe('screen transitions', () => {
     await settled(page, /\/eatery\/pot\?id=/);
     // The pot screen covers the tab bar.
     const bar = await page.locator('.tabbar').boundingBox();
-    const hit = await page.evaluate(
-      ([x, y]) => document.elementFromPoint(x, y)?.closest('section')?.getAttribute('data-screen'),
-      [bar!.x + bar!.width / 2, bar!.y + bar!.height / 2],
-    );
-    expect(hit).toBe('stack-full');
+    await expect
+      .poll(() =>
+        page.evaluate(
+          ([x, y]) => document.elementFromPoint(x, y)?.closest('section')?.getAttribute('data-screen'),
+          [bar!.x + bar!.width / 2, bar!.y + bar!.height / 2],
+        ),
+      )
+      .toBe('stack-full');
     await page.goBack();
     await settled(page, '/eatery');
     expect(await transitions(page)).toEqual(['push-full', 'pop-full']);

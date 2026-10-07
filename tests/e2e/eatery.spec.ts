@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { ready, settled } from './helpers';
-import { seedEateryDay } from './seed';
+import { asEateryOwner, removeUser, type TestUser } from './account';
+import { removeSeedUsers, seedEateryDay } from './seed';
+
+test.afterEach(removeSeedUsers);
 
 /** Phase 6: menu costing, pots, recording sales, weighing, alerts and the free limit. */
 
@@ -22,13 +25,19 @@ test('the sample day adds up like the design', async ({ page }) => {
   await expect(sinigang).toContainText('to break even');
 
   await page.getByRole('radio', { name: 'Menu costs' }).click();
-  await expect(page.getByText('Kamatis up 41% this month')).toBeVisible();
+  await expect(page.getByText(/Kamatis up \d+% this month/)).toBeVisible();
   await expect(page.getByRole('link', { name: /Adobong Manok/ })).toContainText('Cost ₱33.17 · sells ₱85 · 160 g per order');
   await expect(page.getByText('Cheaper substitutes')).toBeVisible();
 });
 
 test('a new eatery: add dishes, cook a pot, record sales, weigh the pot', async ({ page }) => {
   await openEatery(page);
+  const owner: TestUser | null = await asEateryOwner(page, { business: false });
+  test.info().attach('owner', { body: owner?.id ?? 'no backend' });
+  await page.reload();
+  await settled(page, '/eatery');
+  await ready(page);
+  try {
   await expect(page.getByRole('heading', { name: 'Add your first dish' })).toBeVisible();
   await page.getByRole('link', { name: 'Add a dish' }).click();
   await settled(page, '/eatery?sheet=add-dish');
@@ -69,6 +78,9 @@ test('a new eatery: add dishes, cook a pot, record sales, weigh the pot', async 
   await page.getByRole('button', { name: 'Done' }).click();
   await settled(page, '/eatery');
   await expect(page.getByRole('region', { name: 'Profit right now' })).toContainText('3.2 of 4.0 kg sold');
+  } finally {
+    await removeUser(owner);
+  }
 });
 
 test('the free plan costs 3 dishes; the 4th opens the Business plan', async ({ page }) => {

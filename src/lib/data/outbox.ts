@@ -30,9 +30,10 @@ class Permanent extends Error {}
 
 function check<T extends { error: { message: string; code?: string } | null }>(res: T): T {
   if (res.error) {
-    // 23xxx: constraint (bad data), 42501: not allowed, P0001: plan limit — retrying won't help.
+    // 23xxx: constraint (bad data), 42501: not allowed, P0001: plan limit, P0002: its pot is gone
+    // — retrying won't help.
     const code = res.error.code ?? '';
-    if (/^(23|22|42|P0001|PGRST1)/.test(code)) throw new Permanent(res.error.message);
+    if (/^(23|22|42|P0001|P0002|PGRST1)/.test(code)) throw new Permanent(res.error.message);
     throw new Error(res.error.message);
   }
   return res;
@@ -122,11 +123,16 @@ async function send(sb: Kain, item: OutboxItem, userId: string): Promise<void> {
 }
 
 let flushing: Promise<void> | null = null;
+let again = false;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Send queued writes now, if online and signed in. */
 export function flush(): Promise<void> {
-  if (flushing) return flushing;
+  if (flushing) {
+    // Something was queued mid-upload: go round again when this pass ends.
+    again = true;
+    return flushing;
+  }
   flushing = (async () => {
     const d = db();
     const sb = supabase();
@@ -153,6 +159,10 @@ export function flush(): Promise<void> {
     }
   })().finally(() => {
     flushing = null;
+    if (again) {
+      again = false;
+      void flush();
+    }
   });
   return flushing;
 }

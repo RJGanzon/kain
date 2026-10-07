@@ -4,7 +4,10 @@ import { expect, test, type Page } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { ready, settled } from './helpers';
-import { seedEateryDay } from './seed';
+import { hasBackend, makeUser, signInAs } from './account';
+import { removeSeedUsers, seedEateryDay, seedUsers } from './seed';
+
+test.afterEach(removeSeedUsers);
 
 /**
  * Each screen at 390×844 against its design render (tests/visual/ref, made
@@ -27,7 +30,13 @@ const SCREENS: Array<{ name: string; path: string; act?: (page: Page) => Promise
     name: 'SignIn-role',
     path: '/signin',
     act: async (page) => {
-      await page.getByRole('button', { name: 'Continue with Google' }).click();
+      // Back from Google with a new account: the role picker.
+      if (await hasBackend(page)) {
+        const u = await makeUser();
+        seedUsers.push(u);
+        await signInAs(page, u);
+        await page.reload();
+      }
       await page.getByRole('heading', { name: 'How will you use Kain?' }).waitFor();
     },
   },
