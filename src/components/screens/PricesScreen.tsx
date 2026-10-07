@@ -3,52 +3,66 @@
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
-import { Pill, SampleBadge, type PillTone } from '@/components/ui/Pill';
+import { Pill } from '@/components/ui/Pill';
+import { changeOf, shortDate, TierPill } from '@/components/ui/PriceLabels';
+import { SourceNote } from '@/components/ui/SourceNote';
 import { cn } from '@/lib/cn';
-import { peso2 } from '@/lib/format';
+import { useCatalog } from '@/lib/data/catalog';
+import type { Category, Ingredient } from '@/lib/data/types';
 import { Screen } from '@/lib/nav/Screen';
 import { runTransition } from '@/lib/nav/transition';
-import { SAMPLE_MARKETS, SAMPLE_PRICES, TIER_LABEL, type SamplePrice, type Tier } from '@/lib/sample/plan';
-import { useMarket } from '@/lib/store/device';
+import { perUnit } from '@/lib/planner/nutrition';
+import { usePrices } from '@/lib/log/prices';
 
 const FILTERS = ['All', 'Fish', 'Meat', 'Vegetables', 'Pantry'] as const;
 type Filter = (typeof FILTERS)[number];
 
-const TIER_TONE: Record<Tier, PillTone> = {
-  contrib: 'tier-contributor',
-  log: 'tier-log',
-  da_market: 'tier-da',
-  da_avg: 'tier-avg',
-  estimate: 'tier-est',
+const FILTER_OF: Record<Category, Exclude<Filter, 'All'>> = {
+  fish: 'Fish',
+  meat: 'Meat',
+  veg: 'Vegetables',
+  spice: 'Vegetables',
+  staple: 'Pantry',
+  egg: 'Pantry',
+  legume: 'Pantry',
+  canned: 'Pantry',
+  pantry: 'Pantry',
 };
 
-/** 4-week change: under 3% steady; ▲ 15% or more bad, ▲ under 15% warn; ▼ good. */
-function change(ch: number): { text: string; tone: PillTone } {
-  if (Math.abs(ch) < 0.03) return { text: 'steady', tone: 'steady' };
-  const pct = Math.round(Math.abs(ch) * 100);
-  if (ch > 0) return { text: `▲ ${pct}%`, tone: ch >= 0.15 ? 'bad' : 'warn' };
-  return { text: `▼ ${pct}%`, tone: 'good' };
+/** What people check most, first (the design's order); the rest A to Z. */
+const FEATURED = ['kamatis', 'sibuyas', 'galunggong', 'bangus', 'kangkong', 'kalabasa', 'manok', 'atay', 'tilapia', 'mantika', 'toyo'];
+
+function order(a: Ingredient, b: Ingredient): number {
+  const fa = FEATURED.indexOf(a.id);
+  const fb = FEATURED.indexOf(b.id);
+  if (fa !== -1 || fb !== -1) return (fa === -1 ? 99 : fa) - (fb === -1 ? 99 : fb);
+  return a.name.localeCompare(b.name);
 }
 
-function dateLabel(iso: string): string {
-  if (iso === 'today') return 'Today';
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+function shortName(name: string): string {
+  return name.replace(/ \(.*\)/, '');
 }
 
-function price(p: SamplePrice): string {
-  return Number.isInteger(p.price) ? `₱${p.price}` : peso2(p.price);
+function money(v: number): string {
+  return Number.isInteger(v) ? `₱${v}` : `₱${v.toFixed(2)}`;
 }
 
 export function PricesScreen() {
   const [filter, setFilter] = useState<Filter>('All');
   const [query, setQuery] = useState('');
-  const [marketId] = useMarket();
-  const market = SAMPLE_MARKETS.find((m) => m.id === marketId) ?? SAMPLE_MARKETS[0];
+  const catalog = useCatalog();
+  const prices = usePrices(catalog);
+  const market = catalog.markets.find((m) => m.id === catalog.marketId) ?? catalog.markets[0];
 
   const q = query.trim().toLowerCase();
-  const rows = SAMPLE_PRICES.filter(
-    (p) => (filter === 'All' || p.filter === filter) && (!q || p.name.toLowerCase().includes(q) || p.aliases.some((a) => a.includes(q))),
-  );
+  const rows = [...catalog.ingredients]
+    .sort(order)
+    .filter(
+      (i) =>
+        prices[i.id] &&
+        (filter === 'All' || FILTER_OF[i.category] === filter) &&
+        (!q || i.name.toLowerCase().includes(q) || i.aliases.some((a) => a.includes(q))),
+    );
 
   const pick = (f: Filter) => {
     if (f === filter) return;
@@ -61,7 +75,7 @@ export function PricesScreen() {
         <div className="flex flex-col gap-0.5">
           <h1 className="text-[28px] font-extrabold tracking-[-0.02em]">Today&apos;s prices</h1>
           <div className="flex flex-wrap items-center gap-2 text-[13px] font-semibold text-muted">
-            {market.name} · free for everyone <SampleBadge />
+            {market?.name} · free for everyone <SourceNote catalog={catalog} />
           </div>
         </div>
 
@@ -119,27 +133,28 @@ export function PricesScreen() {
         </div>
 
         <ul className="flex flex-col" aria-label="Prices">
-          {rows.map((p) => {
-            const ch = change(p.change);
+          {rows.map((i) => {
+            const p = prices[i.id];
+            const ch = changeOf(p.price, p.prevPrice);
             return (
-              <li key={p.id} className="flex items-center gap-3 border-b border-line py-2.5">
+              <li key={i.id} className="flex items-center gap-3 border-b border-line py-2.5">
                 <div className="min-w-0 flex-1">
-                  <div className="text-[15px] font-bold">{p.name}</div>
+                  <div className="text-[15px] font-bold">{shortName(i.name)}</div>
                   <div className="mt-0.5 flex items-center gap-1.5">
-                    <Pill tone={TIER_TONE[p.tier]} className="px-[7px] py-px font-bold">
-                      {TIER_LABEL[p.tier]}
-                    </Pill>
-                    <span className="text-[12px] text-muted">{dateLabel(p.date)}</span>
+                    <TierPill tier={p.tier} />
+                    <span className="text-[12px] text-muted">{shortDate(p.observedAt)}</span>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-[15px] font-extrabold">
-                    {price(p)}
-                    <span className="text-[12px] font-semibold text-muted">{p.unit}</span>
+                    {money(p.price)}
+                    <span className="text-[12px] font-semibold text-muted">{perUnit(i.unit)}</span>
                   </div>
-                  <Pill tone={ch.tone} className="mt-0.5 px-[7px] py-px">
-                    {ch.text}
-                  </Pill>
+                  {ch ? (
+                    <Pill tone={ch.tone} className="mt-0.5 px-[7px] py-px">
+                      {ch.text}
+                    </Pill>
+                  ) : null}
                 </div>
               </li>
             );

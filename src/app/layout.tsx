@@ -16,6 +16,8 @@ export const metadata: Metadata = {
   title: { default: 'Kain', template: '%s · Kain' },
   description: 'More nutrition from every peso. Meal plans for your budget and menu costing for carinderias.',
   applicationName: 'Kain',
+  // Lets tests tell whether this build talks to a backend.
+  other: process.env.NEXT_PUBLIC_SUPABASE_URL ? { 'kain-backend': '1' } : {},
 };
 
 export const viewport: Viewport = {
