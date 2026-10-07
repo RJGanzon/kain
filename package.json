@@ -9,9 +9,17 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "design:render": "node scripts/render-designs.mjs"
+    "design:render": "node scripts/render-designs.mjs",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:seed": "node scripts/gen-seed.mjs",
+    "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
+    "test:db": "vitest run --config vitest.db.config.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.117.3",
+    "dexie": "4.4.6",
+    "dexie-react-hooks": "4.4.0",
     "lucide-react": "1.52.0",
     "next": "16.4.0",
     "react": "19.3.0",
@@ -24,6 +32,7 @@
     "@types/pngjs": "6.0.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "fake-indexeddb": "6.2.5",
     "pixelmatch": "8.0.0",
     "pngjs": "7.0.0",
     "tailwindcss": "4.3.3",
