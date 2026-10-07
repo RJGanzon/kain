@@ -10,6 +10,8 @@ const SHELL = ['/', '/signin', '/plan', '/plan/week', '/plan/setup', '/eatery', 
 
 export const { dynamic, dynamicParams, revalidate, generateStaticParams, GET } = createSerwistRoute({
   additionalPrecacheEntries: SHELL.map((url) => ({ url, revision })),
+  // Turbopack's worker loader is served by its own rule in sw.ts (it must keep its URL).
+  manifestTransforms: [async (entries) => ({ manifest: entries.filter((e) => !e.url.includes('turbopack-worker')), warnings: [] })],
   swSrc: 'src/app/sw.ts',
   useNativeEsbuild: true,
 });

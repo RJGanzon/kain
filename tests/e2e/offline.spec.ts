@@ -26,6 +26,26 @@ test('Kain is installable', async ({ page }) => {
   expect(installabilityErrors).toEqual([]);
 });
 
+test('the planner worker still starts once the service worker controls the page', async ({ page }) => {
+  const problems: string[] = [];
+  page.on('console', (m) => {
+    if (m.type() === 'error') problems.push(m.text());
+  });
+  page.on('pageerror', (e) => problems.push(e.message));
+  await page.goto('/plan');
+  await settled(page, '/plan');
+  await swReady(page);
+  // Controlled from the start of this load: the worker script now comes through the service worker.
+  await page.goto('/plan/setup');
+  await settled(page, '/plan/setup');
+  await page.getByRole('button', { name: 'More adults' }).click();
+  await page.getByRole('button', { name: 'Build my plan' }).click();
+  await settled(page, '/plan');
+  await ready(page);
+  await expect(page.getByRole('region', { name: 'Plan cost today' })).toContainText('3 adults');
+  expect(problems.filter((p) => /worker/i.test(p))).toEqual([]);
+});
+
 test('after the first visit, a guest plans, logs and checks prices offline', async ({ page, context }) => {
   await page.goto('/plan');
   await settled(page, '/plan');
