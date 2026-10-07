@@ -1,0 +1,222 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------
+   Design tokens (KAIN_BUILD_PROMPT §4 plus the extra colours the
+   designs use, see docs/PLAN.md §5). Light theme only for now: a dark
+   theme redefines these variables and nothing else.
+   ------------------------------------------------------------------ */
+:root {
+  --bg: #ffffff;
+  --surface: #f6f5f1;
+  --track: #f1efe9;
+  --track-strong: #e2dfd6;
+  --line: #eceae4;
+  --line-strong: #dad6cc;
+  --check-border: #d6d2c8;
+  --ink: #141210;
+  --ink-soft: #3d3a33;
+  --muted: #6b665c;
+  --on-brand: #3d3520;
+  --on-dark-muted: #cfc9ba;
+  --brand: #ffc83a;
+  --brand-tint: #fff4d1;
+  --tile-night: #eceef8;
+  --good: #14663c;
+  --good-bg: #e6f4ec;
+  --good-bar: #1a7f4b;
+  --warn: #8a4f00;
+  --warn-bg: #fff1da;
+  --warn-bar: #d98b00;
+  --bad: #8e1f14;
+  --bad-bg: #fdecea;
+  --bad-bar: #c23a2b;
+  --bad-icon: #b3271a;
+  --tier-da-fg: #5c4600;
+  --tier-est-fg: #57534a;
+  --tier-est-border: #8a857a;
+
+  /* Layout */
+  --tabbar-pad-b: max(20px, env(safe-area-inset-bottom, 0px));
+  --tabbar-h: calc(64px + var(--tabbar-pad-b));
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Motion (docs/PLAN.md §4.3) */
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --dur-push: 350ms;
+  --dur-tab-out: 90ms;
+  --dur-tab-in: 210ms;
+  --dur-sheet-up: 400ms;
+  --dur-sheet-down: 250ms;
+  --dur-state: 250ms;
+  --dur-press: 100ms;
+}
+
+@theme {
+  --color-*: initial;
+}
+
+@theme inline {
+  --color-white: #ffffff;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-track: var(--track);
+  --color-track-strong: var(--track-strong);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-check-border: var(--check-border);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-on-brand: var(--on-brand);
+  --color-on-dark-muted: var(--on-dark-muted);
+  --color-brand: var(--brand);
+  --color-brand-tint: var(--brand-tint);
+  --color-tile-night: var(--tile-night);
+  --color-good: var(--good);
+  --color-good-bg: var(--good-bg);
+  --color-good-bar: var(--good-bar);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-bar: var(--warn-bar);
+  --color-bad: var(--bad);
+  --color-bad-bg: var(--bad-bg);
+  --color-bad-bar: var(--bad-bar);
+  --color-bad-icon: var(--bad-icon);
+  --color-tier-da-fg: var(--tier-da-fg);
+  --color-tier-est-fg: var(--tier-est-fg);
+  --color-tier-est-border: var(--tier-est-border);
+
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+
+  --shadow-seg: 0 1px 3px rgba(20, 18, 16, 0.12);
+  --shadow-float: 0 6px 16px rgba(20, 18, 16, 0.12);
+
+  --ease-ios: var(--ease-ios);
+  --ease-emphasized: var(--ease-emphasized);
+}
+
+/* ------------------------------------------------------------------
+   Base: an app shell, not a web page.
+   ------------------------------------------------------------------ */
+html,
+body {
+  height: 100%;
+}
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+a,
+input,
+label,
+[role='button'] {
+  touch-action: manipulation;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+/* The phone-sized app column. Fills a phone; centred on a wide screen. */
+.app {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  background: var(--bg);
+  isolation: isolate;
+}
+
+@media (min-width: 520px) {
+  .app {
+    box-shadow:
+      1px 0 0 var(--line),
+      -1px 0 0 var(--line);
+  }
+}
+
+/* Press feedback: buttons sink a little, like a native control. */
+.press {
+  transition:
+    transform var(--dur-press) var(--ease-emphasized),
+    background-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.press:active {
+  transform: scale(0.97);
+}
+
+/* Visually hidden, still read by screen readers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Grow a small control's hit area to at least 44px without changing its look. */
+.hit {
+  position: relative;
+}
+
+.hit::after {
+  content: '';
+  position: absolute;
+  inset: -6px -2px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
