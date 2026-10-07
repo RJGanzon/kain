@@ -142,6 +142,27 @@ export async function fetchCatalog(marketId: string): Promise<Catalog> {
 
 let inflight: Promise<void> | null = null;
 
+/** Resolve when the phone is idle, so a background refresh never competes with a tap. */
+function idle(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(() => resolve(), { timeout: 3000 });
+    else setTimeout(resolve, 500);
+  });
+}
+
+/** Same prices and recipes: a refresh that changes nothing shouldn't redraw every screen. */
+function samePrices(a: Catalog, b: Catalog): boolean {
+  if (a.marketId !== b.marketId || a.sample !== b.sample) return false;
+  if (a.ingredients.length !== b.ingredients.length || a.recipes.length !== b.recipes.length) return false;
+  const ids = Object.keys(b.prices);
+  if (ids.length !== Object.keys(a.prices).length) return false;
+  return ids.every((id) => {
+    const x = a.prices[id];
+    const y = b.prices[id];
+    return x && x.price === y.price && x.tier === y.tier && x.observedAt === y.observedAt && x.prevPrice === y.prevPrice;
+  });
+}
+
 /** Switch to a market and refresh its prices if they're older than 6 hours. */
 export async function activateMarket(marketId: string, { force = false } = {}): Promise<void> {
   if (current.marketId !== marketId) {
@@ -153,9 +174,15 @@ export async function activateMarket(marketId: string, { force = false } = {}): 
   const due = force || current.syncedAt === null || Date.now() - current.syncedAt > REFRESH_EVERY_MS;
   if (!due || !backendConfigured() || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
   if (inflight) return inflight;
-  inflight = fetchCatalog(marketId)
+  inflight = idle()
+    .then(() => fetchCatalog(marketId))
     .then((fresh) => {
-      if (current.marketId === marketId) publish(fresh);
+      if (current.marketId !== marketId) return;
+      if (samePrices(current, fresh) && !isStale(current)) {
+        // Nothing to redraw; just remember the refresh.
+        current.syncedAt = fresh.syncedAt;
+        current.source = 'server';
+      } else publish(fresh);
     })
     .catch(() => {
       /* offline or server down: keep what we have; "Prices from …" shows it's old */

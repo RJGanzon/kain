@@ -24,8 +24,10 @@ test('no console errors on any screen', async ({ page }) => {
 
   await page.getByRole('link', { name: 'See week' }).click();
   await settled(page, '/plan/week');
-  await page.getByRole('radio', { name: /Thursday/ }).click();
-  await expect(page.getByText('Thursday vs FNRI needs')).toBeVisible();
+  const secondDay = page.getByRole('radiogroup', { name: 'Day' }).getByRole('radio').nth(1);
+  const dayName = ((await secondDay.getAttribute('aria-label')) ?? '').split(',')[0];
+  await secondDay.click();
+  await expect(page.getByText(`${dayName} vs FNRI needs`)).toBeVisible();
   await page.getByRole('checkbox').first().click();
   await expect(page.getByRole('checkbox').first()).toHaveAttribute('aria-checked', 'true');
 

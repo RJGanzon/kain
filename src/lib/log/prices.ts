@@ -1,10 +1,10 @@
 'use client';
 
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo } from 'react';
 import { manilaToday } from '@/components/ui/PriceLabels';
-import { db, type PurchaseLog } from '@/lib/data/db';
+import type { PurchaseLog } from '@/lib/data/db';
 import type { Catalog, Price } from '@/lib/data/types';
+import { useLogs } from './store';
 
 const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000;
 
@@ -34,14 +34,8 @@ export function withLogs(prices: Record<string, Price>, logs: PurchaseLog[], mar
   return out;
 }
 
-const NO_LOGS: PurchaseLog[] = [];
-
 /** The catalog's prices with this phone's purchase logs applied. */
 export function usePrices(catalog: Catalog): Record<string, Price> {
-  const logs = useLiveQuery(
-    async () => (await db()?.logs.where('loggedAt').above(Date.now() - FOURTEEN_DAYS).toArray()) ?? NO_LOGS,
-    [],
-    NO_LOGS,
-  );
-  return useMemo(() => withLogs(catalog.prices, logs, catalog.marketId), [catalog, logs]);
+  const logs = useLogs();
+  return useMemo(() => (logs.length ? withLogs(catalog.prices, logs, catalog.marketId) : catalog.prices), [catalog, logs]);
 }

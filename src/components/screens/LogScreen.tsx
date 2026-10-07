@@ -10,7 +10,8 @@ import { cn } from '@/lib/cn';
 import { peso } from '@/lib/format';
 import { Screen } from '@/lib/nav/Screen';
 import { runTransition } from '@/lib/nav/transition';
-import { SAMPLE_LOGS, SAMPLE_PLAN } from '@/lib/sample/plan';
+import { usePlan } from '@/lib/planner/usePlan';
+import { SAMPLE_LOGS } from '@/lib/sample/logs';
 
 const EXAMPLE = 'isang kilo kamatis 110';
 
@@ -30,7 +31,9 @@ export function LogScreen() {
   }, []);
 
   const logged = entries.reduce((a, e) => a + e.price, 0);
-  const plan = SAMPLE_PLAN.shopTotal;
+  const planState = usePlan();
+  // The plan's shopping for a week (a one-day plan counts seven times).
+  const plan = planState ? Math.round((planState.plan.shopTotal / planState.plan.days.length) * 7) : 0;
   const showPreview = text.trim().toLowerCase() === EXAMPLE;
 
   const add = () => {
@@ -132,7 +135,7 @@ export function LogScreen() {
           </div>
           <div className="grid grid-cols-[64px_minmax(0,1fr)_64px] items-center gap-2.5">
             <span className="text-[13px] font-bold">Logged</span>
-            <Meter value={logged / plan} height={10} label={`Logged ${peso(logged)}`} />
+            <Meter value={plan ? logged / plan : 0} height={10} label={`Logged ${peso(logged)}`} />
             <span className="text-right text-[13px] font-extrabold">{peso(logged)}</span>
           </div>
         </section>

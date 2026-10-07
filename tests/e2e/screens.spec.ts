@@ -3,7 +3,7 @@ import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
-import { settled } from './helpers';
+import { ready, settled } from './helpers';
 
 /**
  * Each screen at 390×844 against its design render (tests/visual/ref, made
@@ -42,6 +42,7 @@ async function open(page: Page, url: string, act?: (page: Page) => Promise<void>
   await page.goto(url);
   await settled(page, url);
   await page.evaluate(() => document.fonts.ready);
+  await ready(page);
   if (act) {
     await act(page);
     await page.waitForFunction(() => !document.documentElement.dataset.nav);

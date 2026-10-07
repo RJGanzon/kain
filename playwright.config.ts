@@ -2,9 +2,19 @@ import { defineConfig, devices } from '@playwright/test';
 
 const PORT = Number(process.env.PORT ?? 3100);
 
+const PHONE = {
+  ...devices['Desktop Chrome'],
+  viewport: { width: 390, height: 844 },
+  deviceScaleFactor: 1,
+  isMobile: true,
+  hasTouch: true,
+};
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
+  // Leave CPU for the app server and local Supabase.
+  workers: process.env.CI ? 2 : 4,
   retries: process.env.CI ? 1 : 0,
   reporter: [['list']],
   use: {
@@ -14,13 +24,15 @@ export default defineConfig({
   projects: [
     {
       name: 'phone',
-      use: {
-        ...devices['Desktop Chrome'],
-        viewport: { width: 390, height: 844 },
-        deviceScaleFactor: 1,
-        isMobile: true,
-        hasTouch: true,
-      },
+      testIgnore: /perf\.spec\.ts/,
+      use: PHONE,
+    },
+    {
+      // Timing runs alone, after everything else, so other tests don't skew it.
+      name: 'perf',
+      testMatch: /perf\.spec\.ts/,
+      dependencies: ['phone'],
+      use: PHONE,
     },
   ],
   webServer: {

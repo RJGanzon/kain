@@ -6,9 +6,12 @@ import { Button } from '@/components/ui/Button';
 import { Segmented } from '@/components/ui/Segmented';
 import { Stepper } from '@/components/ui/Stepper';
 import { cn } from '@/lib/cn';
+import { useCatalog } from '@/lib/data/catalog';
+import { usePrices } from '@/lib/log/prices';
 import { BackButton } from '@/lib/nav/links';
 import { nav } from '@/lib/nav/nav';
 import { Screen } from '@/lib/nav/Screen';
+import { prepareFamilyPlan } from '@/lib/planner/usePlan';
 import { useFamily, type FamilySettings } from '@/lib/store/device';
 
 const MIN = 150;
@@ -17,15 +20,27 @@ const QUICK = [250, 350, 500];
 
 export function SetupScreen() {
   const [saved, save] = useFamily();
+  const catalog = useCatalog();
+  const prices = usePrices(catalog);
   const [draft, setDraft] = useState<FamilySettings | null>(null);
+  const [building, setBuilding] = useState(false);
   const f = draft ?? saved;
   const set = (patch: Partial<FamilySettings>) => setDraft({ ...f, ...patch });
   const fill = ((Math.min(MAX, Math.max(MIN, f.budget)) - MIN) / (MAX - MIN)) * 100;
   const servings = (f.adults + 0.6 * f.kids).toFixed(1);
 
-  const build = () => {
+  // Make the new plan first, so Today slides back in already showing it.
+  const build = async () => {
+    if (building) return;
+    setBuilding(true);
+    try {
+      await prepareFamilyPlan(catalog, prices, f);
+    } catch {
+      /* Today will make it */
+    }
     save(f);
     nav.back('/plan', 'pop-full');
+    setBuilding(false);
   };
 
   return (
@@ -35,8 +50,8 @@ export function SetupScreen() {
       backFallback="/plan"
       footer={
         <div className="flex flex-col items-center gap-2.5">
-          <Button onClick={build}>
-            Build my plan
+          <Button onClick={build} aria-busy={building}>
+            {building ? 'Building your plan…' : 'Build my plan'}
             <ArrowRight size={18} strokeWidth={2.6} className="text-brand" aria-hidden="true" />
           </Button>
           <div className="text-[12px] font-semibold text-muted">{servings} servings per meal · same inputs, same plan</div>

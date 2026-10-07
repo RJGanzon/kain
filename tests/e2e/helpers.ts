@@ -30,6 +30,11 @@ export async function settled(page: Page, path: string | RegExp): Promise<void> 
   await page.waitForFunction(() => !document.documentElement.dataset.nav);
 }
 
+/** Wait until nothing on screen is still being worked out (plans, prices). */
+export async function ready(page: Page): Promise<void> {
+  await page.waitForFunction(() => !document.querySelector('section[data-screen]:not([data-covered]) [aria-busy="true"]'));
+}
+
 function escape(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

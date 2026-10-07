@@ -2,33 +2,47 @@
 
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Check, ChevronDown, ChevronRight, MapPin, Moon, ShoppingBag, SlidersHorizontal, Sun, Sunrise } from 'lucide-react';
-import { Suspense, useCallback, type ReactNode } from 'react';
+import { Suspense, useCallback, useMemo, type ReactNode } from 'react';
 import { IconTile, Overline } from '@/components/ui/bits';
 import { iconButtonClass } from '@/components/ui/IconButton';
 import { Logo } from '@/components/ui/Logo';
 import { Meter, NutritionRing } from '@/components/ui/Meter';
-import { SampleBadge } from '@/components/ui/Pill';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { SourceNote } from '@/components/ui/SourceNote';
 import { cn } from '@/lib/cn';
+import { useCatalog } from '@/lib/data/catalog';
 import { peso } from '@/lib/format';
+import { useHydrated } from '@/lib/hydrated';
 import { NavLink } from '@/lib/nav/links';
 import { nav } from '@/lib/nav/nav';
 import { Screen } from '@/lib/nav/Screen';
 import { Sheet } from '@/lib/nav/Sheet';
-import { nutritionScore, SAMPLE_MARKETS, SAMPLE_PLAN, SAMPLE_TODAY_LABEL, type MealSlot } from '@/lib/sample/plan';
+import { familyLabel, longDate, mealIngredients, servingsLabel } from '@/lib/planner/describe';
+import { cheapestDayCost, planScore } from '@/lib/planner/planner';
+import { usePlan } from '@/lib/planner/usePlan';
 import { useMarket } from '@/lib/store/device';
 
-const MEAL_ROWS: Array<{ slot: MealSlot; label: string; tile: string; icon: ReactNode }> = [
-  { slot: 'almusal', label: 'Almusal', tile: 'bg-brand-tint', icon: <Sunrise size={22} strokeWidth={2} /> },
-  { slot: 'tanghalian', label: 'Tanghalian', tile: 'bg-good-bg', icon: <Sun size={22} strokeWidth={2} /> },
-  { slot: 'hapunan', label: 'Hapunan', tile: 'bg-tile-night', icon: <Moon size={22} strokeWidth={2} /> },
+type Slot = 'breakfast' | 'lunch' | 'dinner';
+
+const MEAL_ROWS: Array<{ slot: Slot; label: string; tile: string; icon: ReactNode }> = [
+  { slot: 'breakfast', label: 'Almusal', tile: 'bg-brand-tint', icon: <Sunrise size={22} strokeWidth={2} /> },
+  { slot: 'lunch', label: 'Tanghalian', tile: 'bg-good-bg', icon: <Sun size={22} strokeWidth={2} /> },
+  { slot: 'dinner', label: 'Hapunan', tile: 'bg-tile-night', icon: <Moon size={22} strokeWidth={2} /> },
 ];
 
 export function TodayScreen() {
-  const plan = SAMPLE_PLAN;
-  const today = plan.days[0];
-  const { budget, adults, kids } = plan.inputs;
-  const [marketId] = useMarket();
-  const market = SAMPLE_MARKETS.find((m) => m.id === marketId) ?? SAMPLE_MARKETS[0];
+  const state = usePlan();
+  const catalog = useCatalog();
+  const hydrated = useHydrated();
+  const market = catalog.markets.find((m) => m.id === catalog.marketId) ?? catalog.markets[0];
+  const ingredients = useMemo(() => new Map(catalog.ingredients.map((i) => [i.id, i])), [catalog.ingredients]);
+  const recipes = useMemo(() => new Map(catalog.recipes.map((r) => [r.id, r])), [catalog.recipes]);
+
+  const plan = state?.plan;
+  const today = plan?.days[0];
+  const budget = state?.family.budget ?? 0;
+  const over = plan?.days.some((d) => d.over) ?? false;
+  const left = today ? budget - today.cost : 0;
 
   return (
     <Screen presentation="tab" label="Today's plan" scrollKey="/plan">
@@ -39,12 +53,12 @@ export function TodayScreen() {
           <NavLink
             href="/plan?sheet=market"
             kind="sheet-up"
-            aria-label={`Change market, now ${market.name}`}
-            className="press hit flex h-9 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-[13px] font-bold no-underline"
+            aria-label={`Change market, now ${market?.name ?? ''}`}
+            className="press hit flex h-9 min-w-0 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-[13px] font-bold no-underline"
           >
-            <MapPin size={15} strokeWidth={2.2} aria-hidden="true" />
-            {market.name}
-            <ChevronDown size={14} strokeWidth={2.4} aria-hidden="true" />
+            <MapPin size={15} strokeWidth={2.2} className="flex-none" aria-hidden="true" />
+            <span className="truncate">{market?.name}</span>
+            <ChevronDown size={14} strokeWidth={2.4} className="flex-none" aria-hidden="true" />
           </NavLink>
           <NavLink href="/plan/setup" kind="push-full" aria-label="Edit budget and family" className={iconButtonClass()}>
             <SlidersHorizontal size={20} strokeWidth={2.2} aria-hidden="true" />
@@ -52,35 +66,53 @@ export function TodayScreen() {
         </header>
 
         <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2 text-[13px] font-semibold text-muted">
-            {SAMPLE_TODAY_LABEL}
-            <SampleBadge />
+          <div className="flex min-h-[17px] flex-wrap items-center gap-2 text-[13px] font-semibold text-muted">
+            {hydrated ? longDate() : <Skeleton className="h-3 w-32" />}
+            <SourceNote catalog={catalog} />
           </div>
           <h1 className="text-[28px] font-extrabold tracking-[-0.02em]">Today&apos;s plan</h1>
         </div>
 
-        <section aria-label="Plan cost today" className="flex items-center gap-4 rounded-[24px] bg-brand p-5">
+        <section aria-label="Plan cost today" aria-busy={!plan} className="flex items-center gap-4 rounded-[24px] bg-brand p-5">
           <div className="flex min-w-0 flex-1 flex-col gap-2.5">
             <div className="text-[13px] font-bold text-on-brand">Plan cost today</div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-[40px] leading-none font-extrabold tracking-[-0.03em]">{peso(today.cost)}</span>
-              <span className="text-[15px] font-bold text-on-brand">of {peso(budget)}</span>
+            <div className="flex min-h-10 items-baseline gap-1.5">
+              {today ? (
+                <>
+                  <span className="text-[40px] leading-none font-extrabold tracking-[-0.03em]">{peso(today.cost)}</span>
+                  <span className="text-[15px] font-bold text-on-brand">of {peso(budget)}</span>
+                </>
+              ) : (
+                <Skeleton dark className="h-10 w-36" />
+              )}
             </div>
             <Meter
-              value={today.cost / budget}
+              value={today ? today.cost / budget : 0}
               height={8}
               trackClassName="bg-[rgba(20,18,16,0.14)]"
-              label={`${Math.round((today.cost / budget) * 100)}% of today's budget`}
+              label={today ? `${Math.round((today.cost / budget) * 100)}% of today's budget` : undefined}
             />
-            <div className="flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-white px-2.5 py-1 text-[12px] font-bold">{peso(budget - today.cost)} left</span>
-              <span className="rounded-full bg-white/55 px-2.5 py-1 text-[12px] font-bold">
-                {adults} adults · {kids} kids
-              </span>
+            <div className="flex min-h-[24px] flex-wrap gap-1.5">
+              {today && state ? (
+                <>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[12px] font-bold">
+                    {left >= 0 ? `${peso(left)} left` : `${peso(-left)} over`}
+                  </span>
+                  <span className="rounded-full bg-white/55 px-2.5 py-1 text-[12px] font-bold">
+                    {familyLabel(state.family.adults, state.family.kids)}
+                  </span>
+                </>
+              ) : null}
             </div>
           </div>
-          <NutritionRing value={nutritionScore(plan.average)} />
+          <NutritionRing value={plan ? planScore(plan) : 0} />
         </section>
+
+        {plan && over ? (
+          <div role="alert" className="rounded-[18px] bg-bad-bg px-3.5 py-3 text-[14px] leading-[1.45] font-semibold text-bad">
+            <b className="font-extrabold">Budget too small.</b> The cheapest plan costs {peso(cheapestDayCost(plan))} a day.
+          </div>
+        ) : null}
 
         <section aria-labelledby="meals-title" className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between">
@@ -88,8 +120,10 @@ export function TodayScreen() {
               <h2 id="meals-title" className="text-[18px] font-extrabold">
                 Meals
               </h2>
-              <div className="text-[13px] font-semibold text-muted">
-                Day 1 of {plan.days.length} · for {plan.servings} servings
+              <div className="min-h-[17px] text-[13px] font-semibold text-muted">
+                {plan
+                  ? `${plan.days.length > 1 ? `Day 1 of ${plan.days.length}` : 'Today'} · for ${servingsLabel(plan.servings)} servings`
+                  : null}
               </div>
             </div>
             <NavLink href="/plan/week" kind="push" className="hit text-[14px] font-bold underline underline-offset-3">
@@ -98,7 +132,8 @@ export function TodayScreen() {
           </div>
           <div className="overflow-hidden rounded-[20px] border border-line">
             {MEAL_ROWS.map(({ slot, label, tile, icon }, i) => {
-              const meal = today.meals[slot];
+              const recipe = today ? recipes.get(today[slot]) : undefined;
+              const cost = recipe && plan ? plan.dishes[recipe.id].cost * plan.servings : 0;
               return (
                 <div key={slot}>
                   {i > 0 ? <div className="ml-[78px] h-px bg-line" /> : null}
@@ -106,10 +141,19 @@ export function TodayScreen() {
                     <IconTile className={tile}>{icon}</IconTile>
                     <div className="min-w-0 flex-1">
                       <Overline>{label}</Overline>
-                      <div className="text-[16px] font-bold">{meal.name}</div>
-                      <div className="text-[13px] text-muted">{meal.ingredients}</div>
+                      {recipe ? (
+                        <>
+                          <div className="text-[16px] font-bold">{recipe.name}</div>
+                          <div className="text-[13px] text-muted">{mealIngredients(recipe, ingredients)}</div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col gap-1.5 py-1">
+                          <Skeleton className="h-4 w-40" />
+                          <Skeleton className="h-3 w-28" />
+                        </div>
+                      )}
                     </div>
-                    <div className="text-[15px] font-extrabold">{peso(meal.cost)}</div>
+                    <div className={cn('text-[15px] font-extrabold', !recipe && 'invisible')}>{peso(cost)}</div>
                   </div>
                 </div>
               );
@@ -127,8 +171,8 @@ export function TodayScreen() {
           </IconTile>
           <div className="flex-1">
             <div className="text-[15px] font-bold">Shopping list</div>
-            <div className="text-[13px] text-muted">
-              {plan.shop.length} items for {plan.days.length} days · {peso(plan.shopTotal)}
+            <div className="min-h-[17px] text-[13px] text-muted">
+              {plan ? `${plan.shop.length} items for ${plan.days.length > 1 ? `${plan.days.length} days` : 'today'} · ${peso(plan.shopTotal)}` : null}
             </div>
           </div>
           <ChevronRight size={18} strokeWidth={2.4} aria-hidden="true" />
@@ -146,6 +190,7 @@ export function TodayScreen() {
 function MarketSheet() {
   const open = useSearchParams().get('sheet') === 'market';
   const pathname = usePathname();
+  const catalog = useCatalog();
   const [marketId, setMarket] = useMarket();
   const close = useCallback((opts?: { animate?: boolean }) => nav.dismiss(pathname, opts), [pathname]);
 
@@ -153,7 +198,7 @@ function MarketSheet() {
     <Sheet open={open} title="Choose your market" onClose={close}>
       <p className="-mt-1 pb-3 text-[14px] leading-[1.45] text-muted">Prices and plans use the market you shop at.</p>
       <div role="radiogroup" aria-label="Markets" className="flex flex-col">
-        {SAMPLE_MARKETS.map((m) => {
+        {catalog.markets.map((m) => {
           const on = m.id === marketId;
           return (
             <button
