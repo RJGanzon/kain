@@ -1,5 +1,6 @@
 import { test, type Page } from '@playwright/test';
 import { settled } from './helpers';
+import { seedEateryDay } from './seed';
 
 /**
  * Captures each screen transition frozen part-way, for eyeballing the motion.
@@ -52,6 +53,8 @@ async function capture(page: Page, name: string, act: () => Promise<unknown>) {
 }
 
 test('capture transition frames', async ({ page }) => {
+  await page.goto('/eatery');
+  await seedEateryDay(page);
   await freezeTransitions(page);
   await page.goto('/plan');
   await settled(page, '/plan');
@@ -64,5 +67,5 @@ test('capture transition frames', async ({ page }) => {
   await capture(page, '5-tab-eatery', () => tabs.getByRole('link', { name: 'Eatery' }).click());
   await capture(page, '6-sheet-up-business', () => page.getByRole('link', { name: 'Business', exact: true }).click());
   await capture(page, '7-sheet-down-business', () => page.getByRole('button', { name: 'Close' }).click());
-  await capture(page, '8-push-full-pot', () => page.getByRole('link', { name: 'Pinakbet' }).click());
+  await capture(page, '8-push-full-pot', () => page.getByRole('link', { name: /Pinakbet/ }).click());
 });

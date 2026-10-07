@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { recordTransitions, settled } from './helpers';
+import { seedEateryDay } from './seed';
 
 /** Every screen and sheet loads and runs without a console error. */
 test('no console errors on any screen', async ({ page }) => {
@@ -33,21 +34,23 @@ test('no console errors on any screen', async ({ page }) => {
 
   await tabs.getByRole('link', { name: 'Eatery' }).click();
   await settled(page, '/eatery');
+  await seedEateryDay(page);
+  await settled(page, '/eatery');
   await page.getByRole('radio', { name: 'Menu costs' }).click();
   await expect(page.getByText('Kamatis up 41% this month')).toBeVisible();
   await page.getByRole('radio', { name: "Today's sales" }).click();
   await page.getByRole('link', { name: /Sinigang na Bangus/ }).click();
-  await settled(page, '/eatery/pot/sinigang-na-bangus');
+  await settled(page, /\/eatery\/pot\?id=[^&]+$/);
   await expect(page.getByText('Still to break even')).toBeVisible();
   await page.getByRole('button', { name: '+5 orders' }).click();
   await page.getByRole('button', { name: '+1 order' }).click();
   await page.getByRole('button', { name: '+1 order' }).click();
   await expect(page.getByText('Profit so far', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Weigh the pot instead' }).click();
-  await settled(page, '/eatery/pot/sinigang-na-bangus?sheet=weigh');
+  await settled(page, /sheet=weigh$/);
   await page.getByLabel(/How many kilos are left/).fill('1.5');
   await page.getByRole('button', { name: 'Update sold' }).click();
-  await settled(page, '/eatery/pot/sinigang-na-bangus');
+  await settled(page, /\/eatery\/pot\?id=[^&]+$/);
   await expect(page.getByText('14 of 20 orders sold')).toBeVisible();
   await page.getByRole('button', { name: 'Done' }).click();
   await settled(page, '/eatery');

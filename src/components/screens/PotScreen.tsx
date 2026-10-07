@@ -6,13 +6,15 @@ import { Suspense, useCallback, useState } from 'react';
 import { Overline } from '@/components/ui/bits';
 import { Button } from '@/components/ui/Button';
 import { Meter } from '@/components/ui/Meter';
-import { SampleBadge } from '@/components/ui/Pill';
+import { NumberField, toNumber } from '@/components/ui/NumberField';
+import { SyncNote } from '@/components/ui/SyncNote';
+import { recordSale, removePot, usePot, type PotView } from '@/lib/eatery/store';
 import { kg, peso } from '@/lib/format';
+import { useHydrated } from '@/lib/hydrated';
 import { BackButton, NavLink } from '@/lib/nav/links';
 import { nav } from '@/lib/nav/nav';
 import { Screen } from '@/lib/nav/Screen';
 import { Sheet } from '@/lib/nav/Sheet';
-import { potNumbers, sampleDish, type SampleDish } from '@/lib/sample/eatery';
 
 /** A short tap of haptic feedback where the phone supports it (Android). */
 function tick() {
@@ -23,23 +25,47 @@ function tick() {
   }
 }
 
-export function PotScreen({ id }: { id: string }) {
-  const dish = sampleDish(id)!;
-  const [sold, setSold] = useState(() => potNumbers(dish).sold);
-  const n = potNumbers(dish, sold);
+let timeFmt: Intl.DateTimeFormat | null = null;
+function cookedTime(ms: number): string {
+  timeFmt ??= new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' });
+  return timeFmt.format(new Date(ms)).replace(/\s*(AM|PM)$/i, (m) => ' ' + m.trim().toLowerCase());
+}
+
+export function PotScreen() {
+  const id = useSearchParams().get('id');
+  const view = usePot(id);
+  const hydrated = useHydrated();
+
+  if (!view) {
+    return (
+      <Screen presentation="stack-full" label="Pot" backFallback="/eatery">
+        <div className="flex flex-col gap-4 px-5 pt-4">
+          <BackButton fallback="/eatery" kind="pop-full" />
+          {hydrated ? <p className="text-[15px] text-muted">This pot isn&apos;t on this phone. It may have been removed.</p> : null}
+        </div>
+      </Screen>
+    );
+  }
+  return <PotDetail view={view} />;
+}
+
+function PotDetail({ view }: { view: PotView }) {
+  const { pot, dish, numbers: n } = view;
+  const [confirm, setConfirm] = useState(false);
   const ahead = n.profitNow >= 0;
-  const soldKg = n.sold * dish.orderKg;
-  const leftKg = n.left * dish.orderKg;
-  const breakEvenAt = Math.min(1, n.breakEven / n.orders);
+  const breakEvenAt = n.orders ? Math.min(1, n.breakEven / n.orders) : 1;
+  const latePrice = dish.item.latePrice;
   const record = (delta: number) => {
+    const next = Math.max(0, Math.min(n.orders, n.sold + delta));
+    if (next === n.sold) return;
     tick();
-    setSold((s) => Math.max(0, Math.min(n.orders, s + delta)));
+    void recordSale(pot.id, next - n.sold);
   };
 
   return (
     <Screen
       presentation="stack-full"
-      label={`${dish.name} pot`}
+      label={`${dish.recipe.name} pot`}
       backFallback="/eatery"
       footer={<Button onClick={() => nav.back('/eatery', 'pop-full')}>Done</Button>}
     >
@@ -47,9 +73,9 @@ export function PotScreen({ id }: { id: string }) {
         <header className="flex h-11 items-center justify-between">
           <BackButton fallback="/eatery" kind="pop-full" />
           <div className="text-center">
-            <h1 className="text-[16px] font-extrabold">{dish.name}</h1>
+            <h1 className="text-[16px] font-extrabold">{dish.recipe.name}</h1>
             <div className="text-[12px] font-semibold text-muted">
-              {kg(dish.cookedKg)} kg pot · cooked {dish.cookedAt}
+              {kg(pot.cookedKg)} kg pot · cooked {cookedTime(pot.cookedAt)}
             </div>
           </div>
           <div className="w-11" />
@@ -59,26 +85,26 @@ export function PotScreen({ id }: { id: string }) {
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
               <Overline>Cooked</Overline>
-              <div className="text-[24px] font-extrabold">{kg(dish.cookedKg)} kg</div>
+              <div className="text-[24px] font-extrabold">{kg(pot.cookedKg)} kg</div>
             </div>
             <div>
               <Overline>Sold</Overline>
-              <div className="text-[24px] font-extrabold">{kg(soldKg)} kg</div>
+              <div className="text-[24px] font-extrabold">{kg(n.soldKg)} kg</div>
             </div>
             <div className="rounded-[14px] bg-white pt-0.5 pb-1">
               <Overline>Left</Overline>
-              <div className="text-[24px] font-extrabold">{kg(leftKg)} kg</div>
+              <div className="text-[24px] font-extrabold">{kg(n.leftKg)} kg</div>
             </div>
           </div>
           <div className="relative pt-[18px]">
             <div
               className="absolute top-0 -translate-x-1/2 text-[10px] font-extrabold whitespace-nowrap text-muted"
-              style={{ left: `${breakEvenAt * 100}%` }}
+              style={{ left: `${Math.min(92, Math.max(8, breakEvenAt * 100))}%` }}
             >
               break-even
             </div>
             <Meter
-              value={n.sold / n.orders}
+              value={n.orders ? n.sold / n.orders : 0}
               height={12}
               trackClassName="bg-track-strong"
               fillColor={ahead ? 'var(--ink)' : 'var(--warn-bar)'}
@@ -87,14 +113,14 @@ export function PotScreen({ id }: { id: string }) {
             <div className="absolute top-[15px] h-[18px] w-0.5 bg-ink" style={{ left: `${breakEvenAt * 100}%` }} aria-hidden="true" />
           </div>
           <div className="text-center text-[13px] font-semibold text-ink-soft">
-            {n.sold} of {n.orders} orders sold · {n.left} left · 1 order ≈ {Math.round(dish.orderKg * 1000)} g
+            {n.sold} of {n.orders} orders sold · {n.left} left · 1 order ≈ {Math.round(dish.orderG)} g
           </div>
         </section>
 
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div className="text-[13px] font-bold text-muted">Record a sale</div>
-            <SampleBadge />
+            <SyncNote />
           </div>
           <div className="grid grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)] gap-2">
             <button
@@ -124,7 +150,7 @@ export function PotScreen({ id }: { id: string }) {
             </button>
           </div>
           <NavLink
-            href={`/eatery/pot/${dish.id}?sheet=weigh`}
+            href={`/eatery/pot?id=${pot.id}&sheet=weigh`}
             kind="sheet-up"
             className="press hit flex items-center justify-center gap-1.5 self-center py-1 text-[14px] font-bold text-ink underline underline-offset-3"
           >
@@ -144,9 +170,7 @@ export function PotScreen({ id }: { id: string }) {
           </div>
           <div className="flex items-baseline justify-between border-b border-line py-3">
             <span className="text-[15px] font-extrabold">{ahead ? 'Profit so far' : 'Still to break even'}</span>
-            <span className={ahead ? 'text-[22px] font-extrabold text-good' : 'text-[22px] font-extrabold text-warn'}>
-              {peso(n.profitNow)}
-            </span>
+            <span className={ahead ? 'text-[22px] font-extrabold text-good' : 'text-[22px] font-extrabold text-warn'}>{peso(n.profitNow)}</span>
           </div>
           <div className="flex justify-between py-2.5 text-[14px]">
             <span className="font-semibold text-muted">Estimated if the rest sells</span>
@@ -154,63 +178,77 @@ export function PotScreen({ id }: { id: string }) {
           </div>
         </section>
 
-        {n.left > 0 ? (
+        {n.left > 0 && latePrice ? (
           <div className="flex items-start gap-3 rounded-[18px] bg-brand-tint px-3.5 py-3">
             <Lightbulb size={20} strokeWidth={2.2} className="mt-px flex-none" aria-hidden="true" />
             <p className="text-[13px] leading-[1.4] font-semibold text-on-brand">
-              {n.left} {n.left === 1 ? 'order' : 'orders'} ({kg(leftKg)} kg) left. Selling them at {peso(dish.latePrice)} after 6 pm still
-              brings in {peso(n.left * dish.latePrice)} instead of going to waste.
+              {n.left} {n.left === 1 ? 'order' : 'orders'} ({kg(n.leftKg)} kg) left. Selling them at {peso(latePrice)} after 6 pm still brings in{' '}
+              {peso(n.left * latePrice)} instead of going to waste.
             </p>
           </div>
         ) : null}
+
+        {confirm ? (
+          <div className="flex items-center justify-between gap-3 rounded-[16px] bg-bad-bg px-3.5 py-2.5">
+            <span className="text-[14px] font-bold text-bad">Remove this pot and its sales?</span>
+            <button
+              type="button"
+              onClick={async () => {
+                await removePot(pot.id);
+                nav.back('/eatery', 'pop-full');
+              }}
+              className="press h-10 rounded-[12px] bg-bad px-3.5 text-[14px] font-extrabold text-white"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setConfirm(true)} className="press hit self-center py-1 text-[13px] font-bold text-muted underline underline-offset-3">
+            Remove this pot
+          </button>
+        )}
       </div>
 
       <Suspense fallback={null}>
-        <WeighSheet dish={dish} onWeighed={(left) => setSold(Math.round((dish.cookedKg - left) / dish.orderKg))} />
+        <WeighSheet view={view} />
       </Suspense>
     </Screen>
   );
 }
 
 /** "Weigh the pot instead": enter the kg left; sold = cooked − left. */
-function WeighSheet({ dish, onWeighed }: { dish: SampleDish; onWeighed: (kgLeft: number) => void }) {
-  const open = useSearchParams().get('sheet') === 'weigh';
+function WeighSheet({ view }: { view: PotView }) {
+  const params = useSearchParams();
   const pathname = usePathname();
+  const open = pathname === '/eatery/pot' && params.get('sheet') === 'weigh';
+  const { pot, dish, numbers: n } = view;
   const [value, setValue] = useState('');
-  const close = useCallback((opts?: { animate?: boolean }) => nav.dismiss(pathname, opts), [pathname]);
-  const kgLeft = Number(value.replace(',', '.'));
-  const valid = value.trim() !== '' && Number.isFinite(kgLeft) && kgLeft >= 0 && kgLeft <= dish.cookedKg;
+  const close = useCallback((opts?: { animate?: boolean }) => nav.dismiss(`/eatery/pot?id=${pot.id}`, opts), [pot.id]);
+  const kgLeft = toNumber(value);
+  const valid = Number.isFinite(kgLeft) && kgLeft >= 0 && kgLeft <= pot.cookedKg;
+  const soldAfter = valid ? Math.max(0, Math.min(n.orders, Math.round((pot.cookedKg - kgLeft) / (dish.orderG / 1000)))) : n.sold;
 
   return (
     <Sheet open={open} title="Weigh the pot" onClose={close}>
       <form
         className="flex flex-col gap-3"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
           if (!valid) return;
-          onWeighed(kgLeft);
+          await recordSale(pot.id, soldAfter - n.sold);
           setValue('');
           close();
         }}
       >
-        <label htmlFor="kg-left" className="text-[14px] leading-[1.45] text-muted">
-          How many kilos are left in the {dish.name} pot? It held {kg(dish.cookedKg)} kg.
-        </label>
-        <div className="flex h-14 items-center gap-2 rounded-[14px] bg-surface px-4">
-          <input
-            id="kg-left"
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder="1.5"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className="h-full min-w-0 flex-1 bg-transparent text-[20px] font-extrabold outline-none"
-          />
-          <span className="text-[15px] font-bold text-muted">kg left</span>
-        </div>
-        {value.trim() !== '' && !valid ? (
-          <p className="text-[13px] font-semibold text-bad">Enter a number from 0 to {kg(dish.cookedKg)}.</p>
-        ) : null}
+        <NumberField
+          label={`How many kilos are left in the ${dish.recipe.name} pot? It held ${kg(pot.cookedKg)} kg.`}
+          suffix="kg left"
+          decimal
+          value={value}
+          onChange={setValue}
+          hint={valid ? `That's ${soldAfter} of ${n.orders} orders sold.` : undefined}
+        />
+        {value.trim() !== '' && !valid ? <p className="text-[13px] font-semibold text-bad">Enter a number from 0 to {kg(pot.cookedKg)}.</p> : null}
         <Button type="submit" disabled={!valid} className="disabled:opacity-40">
           Update sold
         </Button>

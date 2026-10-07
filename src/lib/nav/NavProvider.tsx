@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react';
 import { startSync } from '@/lib/data/outbox';
+import { preloadEatery } from '@/lib/eatery/store';
 import { preloadLogs } from '@/lib/log/store';
 import { bindRouter, initNav, onPopState } from './nav';
 import { WARM_ROUTES } from './routes';
@@ -44,6 +45,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     initNav();
     preloadLogs();
+    preloadEatery();
     startSync();
     document.documentElement.toggleAttribute('data-swipeback', swipeBackWanted());
     // Capture phase on window runs before Next.js's own popstate listener.

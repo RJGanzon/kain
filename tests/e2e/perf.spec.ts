@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { settled } from './helpers';
+import { seedEateryDay } from './seed';
 
 /**
  * Transition smoothness on a slow phone: CPU throttled 6×. For each
@@ -66,6 +67,8 @@ async function instrument(page: Page) {
 test('transitions stay smooth with the CPU slowed 6×', async ({ page }) => {
   test.setTimeout(120_000);
   await instrument(page);
+  await page.goto('/eatery');
+  await seedEateryDay(page);
   await page.goto('/plan');
   await settled(page, '/plan');
   // A person looks at the first screen before tapping; the app warms up the others meanwhile.
@@ -80,8 +83,8 @@ test('transitions stay smooth with the CPU slowed 6×', async ({ page }) => {
   await settled(page, '/plan');
   await tabs.getByRole('link', { name: 'Eatery' }).click();
   await settled(page, '/eatery');
-  await page.getByRole('link', { name: 'Adobong Manok' }).click();
-  await settled(page, '/eatery/pot/adobong-manok');
+  await page.getByRole('link', { name: /Adobong Manok/ }).click();
+  await settled(page, /\/eatery\/pot\?id=/);
   await page.goBack();
   await settled(page, '/eatery');
   await page.getByRole('radio', { name: 'Menu costs' }).click();

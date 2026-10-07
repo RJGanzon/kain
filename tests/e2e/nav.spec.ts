@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { recordTransitions, screenTitle, settled, transitions } from './helpers';
+import { seedEateryDay } from './seed';
 
 test.describe('screen transitions', () => {
   test('push slides Week in, browser Back pops it, Today keeps its scroll', async ({ page }) => {
@@ -81,8 +82,11 @@ test.describe('screen transitions', () => {
     await recordTransitions(page);
     await page.goto('/eatery');
     await settled(page, '/eatery');
-    await page.getByRole('link', { name: 'Adobong Manok' }).click();
-    await settled(page, '/eatery/pot/adobong-manok');
+    await seedEateryDay(page);
+    await settled(page, '/eatery');
+    await page.evaluate(() => ((window as unknown as { __vt: string[] }).__vt.length = 0));
+    await page.getByRole('link', { name: /Adobong Manok/ }).click();
+    await settled(page, /\/eatery\/pot\?id=/);
     // The pot screen covers the tab bar.
     const bar = await page.locator('.tabbar').boundingBox();
     const hit = await page.evaluate(
@@ -99,7 +103,7 @@ test.describe('screen transitions', () => {
     await recordTransitions(page);
     await page.goto('/eatery');
     await settled(page, '/eatery');
-    await page.getByRole('link', { name: 'Business', exact: true }).click();
+    await page.getByRole('link', { name: /^(Business|Free · \d of 3)$/ }).click();
     await settled(page, '/business');
     await page.getByRole('button', { name: 'Close' }).click();
     await settled(page, '/eatery');

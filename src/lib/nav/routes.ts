@@ -24,7 +24,7 @@ export const TAB_ROOTS: Record<TabId, string> = {
  * Screens to load ahead of time once the app is idle, so the first tap on
  * each is as quick as the second. All are small and static.
  */
-export const WARM_ROUTES = ['/plan', '/plan/week', '/plan/setup', '/eatery', '/eatery/pot/adobong-manok', '/log', '/prices', '/business'];
+export const WARM_ROUTES = ['/plan', '/plan/week', '/plan/setup', '/eatery', '/eatery/pot', '/log', '/prices', '/business'];
 
 export function pathOf(url: string): string {
   const q = url.indexOf('?');
@@ -44,7 +44,7 @@ export function isTabRoot(url: string): boolean {
 export function presentationOf(url: string): Presentation {
   const path = pathOf(url);
   if (path === '/plan/week') return 'stack';
-  if (path === '/plan/setup' || path.startsWith('/eatery/pot/')) return 'stack-full';
+  if (path === '/plan/setup' || path === '/eatery/pot' || path.startsWith('/eatery/pot/')) return 'stack-full';
   if (path === '/business') return 'sheet';
   if (tabOf(path)) return 'tab';
   return 'full';

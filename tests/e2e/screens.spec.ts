@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { ready, settled } from './helpers';
+import { seedEateryDay } from './seed';
 
 /**
  * Each screen at 390×844 against its design render (tests/visual/ref, made
@@ -12,6 +13,13 @@ import { ready, settled } from './helpers';
  * shows live sample data, lucide icons and the "Sample data" label, so the
  * check is a loose ceiling that catches broken layouts.
  */
+
+/** The design's sample eatery day, then open a screen. */
+const withSampleDay = (then?: (page: Page, pots: string[]) => Promise<void>) => async (page: Page) => {
+  const pots = await seedEateryDay(page);
+  await page.waitForFunction(() => !document.documentElement.dataset.nav);
+  if (then) await then(page, pots);
+};
 
 const SCREENS: Array<{ name: string; path: string; act?: (page: Page) => Promise<void> }> = [
   { name: 'SignIn', path: '/signin' },
@@ -27,9 +35,16 @@ const SCREENS: Array<{ name: string; path: string; act?: (page: Page) => Promise
   { name: 'Main', path: '/plan' },
   { name: 'Week', path: '/plan/week' },
   { name: 'Log', path: '/log' },
-  { name: 'Eatery', path: '/eatery' },
-  { name: 'Eatery-menu', path: '/eatery', act: (page) => page.getByRole('radio', { name: 'Menu costs' }).click() },
-  { name: 'Pot', path: '/eatery/pot/adobong-manok' },
+  { name: 'Eatery', path: '/eatery', act: withSampleDay() },
+  { name: 'Eatery-menu', path: '/eatery', act: withSampleDay((page) => page.getByRole('radio', { name: 'Menu costs' }).click()) },
+  {
+    name: 'Pot',
+    path: '/eatery',
+    act: withSampleDay(async (page, pots) => {
+      await page.goto(`/eatery/pot?id=${pots[1]}`);
+      await page.waitForFunction(() => !document.documentElement.dataset.nav);
+    }),
+  },
   { name: 'Business', path: '/business' },
   { name: 'Prices', path: '/prices' },
 ];
