@@ -1,0 +1,400 @@
+/* ==================================================================
+   Screens and screen transitions (docs/PLAN.md §4).
+
+   Layers inside .app:
+     tab root         z 0    above the tab bar's top edge
+     stack (Week)     z 10   pushed, tab bar stays
+     tab bar          z 20
+     stack-full       z 30   pushed, covers the tab bar
+     sheet            z 40   full-screen modal / bottom sheet
+
+   Transitions use the View Transitions API. nav.ts tags each one on
+   <html data-nav="…">; the rules below pick the animation per tag.
+   Only transform, opacity and filter animate (compositor-friendly).
+   ================================================================== */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.screen-tab,
+.screen-stack {
+  bottom: var(--tabbar-h);
+}
+
+.screen-stack {
+  z-index: 10;
+}
+
+.screen-stack-full {
+  z-index: 30;
+}
+
+.screen-sheet {
+  z-index: 40;
+}
+
+.screen-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding-top: var(--safe-top);
+}
+
+.screen-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Pushed screens: vertical scrolling stays native; horizontal drags are ours (swipe-back). */
+.screen-stack,
+.screen-stack-full,
+.screen-stack .screen-scroll,
+.screen-stack-full .screen-scroll {
+  touch-action: pan-y;
+}
+
+.screen-footer {
+  flex: none;
+  padding: 10px 20px calc(28px + var(--safe-bottom));
+  background: var(--bg);
+}
+
+/* ---------- Bottom sheet ---------- */
+
+.sheet-root {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+}
+
+.sheet-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 18, 16, 0.4);
+}
+
+.sheet-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 85%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-radius: 28px 28px 0 0;
+  padding: 0 20px calc(24px + var(--safe-bottom));
+  outline: none;
+  box-shadow: 0 -8px 30px rgba(20, 18, 16, 0.12);
+}
+
+.sheet-handle {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 10px 0 12px;
+  touch-action: none;
+  cursor: grab;
+}
+
+.sheet-grabber {
+  align-self: center;
+  width: 36px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--track-strong);
+}
+
+/* ==================================================================
+   View-transition names
+   ================================================================== */
+
+.screen-stack,
+.screen-stack-full {
+  view-transition-name: stack-top;
+}
+
+.screen-sheet,
+.sheet-panel {
+  view-transition-name: sheet;
+}
+
+.sheet-scrim {
+  view-transition-name: scrim;
+}
+
+/* The tab bar holds still during tab switches and Week's push/pop. For
+   full-screen pushes and sheets it stays part of the page underneath. */
+html:is([data-nav='tab'], [data-nav='push'], [data-nav='pop']) .tabbar {
+  view-transition-name: tabbar;
+}
+
+html[data-nav='tab'] .tab-pill {
+  view-transition-name: tab-pill;
+}
+
+html[data-nav^='seg'] [data-vt-seg-content] {
+  view-transition-name: seg-content;
+}
+
+html[data-nav^='seg'] [data-vt-seg-thumb] {
+  view-transition-name: seg-thumb;
+}
+
+/* Sliding layers are clipped to the app column (matters on wide screens). */
+::view-transition-image-pair(stack-top),
+::view-transition-image-pair(sheet) {
+  overflow: clip;
+}
+
+/* ==================================================================
+   Keyframes
+   ================================================================== */
+
+@keyframes vt-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes vt-slide-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes vt-under-out {
+  to {
+    transform: translateX(-30%);
+    filter: brightness(0.94);
+  }
+}
+
+@keyframes vt-under-in {
+  from {
+    transform: translateX(-30%);
+    filter: brightness(0.94);
+  }
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-through-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes vt-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes vt-sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes vt-seg-in-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@keyframes vt-seg-in-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+@keyframes vt-seg-out-to-left {
+  to {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+@keyframes vt-seg-out-to-right {
+  to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+/* ==================================================================
+   PUSH: the new screen slides in from the right, the old one slides
+   30% left and dims. push-full is the same, with the tab bar going
+   along with the page underneath.
+   ================================================================== */
+
+html[data-nav^='push']::view-transition-old(root) {
+  animation: var(--dur-push) var(--ease-ios) both vt-under-out;
+}
+
+html[data-nav^='push']::view-transition-new(root) {
+  animation: none;
+  opacity: 0;
+}
+
+html[data-nav^='push']::view-transition-new(stack-top) {
+  animation: var(--dur-push) var(--ease-ios) both vt-slide-in;
+  box-shadow: -10px 0 30px rgba(20, 18, 16, 0.1);
+}
+
+/* POP: the reverse. */
+
+html[data-nav^='pop']::view-transition-old(root) {
+  animation: none;
+  opacity: 0;
+}
+
+html[data-nav^='pop']::view-transition-new(root) {
+  animation: var(--dur-push) var(--ease-ios) both vt-under-in;
+}
+
+html[data-nav^='pop']::view-transition-old(stack-top) {
+  animation: var(--dur-push) var(--ease-ios) both vt-slide-out;
+  box-shadow: -10px 0 30px rgba(20, 18, 16, 0.1);
+}
+
+/* FORWARD / BACKWARD: page to page with no stack (Sign in → Eatery). */
+
+html[data-nav='forward']::view-transition-old(root) {
+  animation: var(--dur-push) var(--ease-ios) both vt-under-out;
+}
+
+html[data-nav='forward']::view-transition-new(root) {
+  animation: var(--dur-push) var(--ease-ios) both vt-slide-in;
+}
+
+html[data-nav='backward']::view-transition-old(root) {
+  z-index: 1;
+  animation: var(--dur-push) var(--ease-ios) both vt-slide-out;
+}
+
+html[data-nav='backward']::view-transition-new(root) {
+  animation: var(--dur-push) var(--ease-ios) both vt-under-in;
+}
+
+/* ==================================================================
+   TAB: fade-through. Old content fades out, new content fades in and
+   settles from 98%. The tab bar holds still; the yellow pill moves.
+   ================================================================== */
+
+html[data-nav='tab']::view-transition-old(root),
+html[data-nav='tab']::view-transition-old(stack-top) {
+  animation: var(--dur-tab-out) var(--ease-exit) both vt-fade-out;
+}
+
+html[data-nav='tab']::view-transition-new(root),
+html[data-nav='tab']::view-transition-new(stack-top) {
+  animation: var(--dur-tab-in) var(--ease-emphasized) var(--dur-tab-out) both vt-fade-through-in;
+}
+
+html[data-nav='tab']::view-transition-group(tab-pill) {
+  animation-duration: 300ms;
+  animation-timing-function: var(--ease-emphasized);
+}
+
+html[data-nav='tab']::view-transition-group(tabbar) {
+  animation-duration: 200ms;
+}
+
+/* ==================================================================
+   SHEET: slides up over the page (which holds still) and back down.
+   ================================================================== */
+
+html[data-nav='sheet-up']::view-transition-old(root) {
+  animation: none;
+}
+
+html[data-nav='sheet-up']::view-transition-new(root) {
+  animation: none;
+  opacity: 0;
+}
+
+html[data-nav='sheet-up']::view-transition-new(sheet) {
+  animation: var(--dur-sheet-up) var(--ease-ios) both vt-sheet-in;
+}
+
+html[data-nav='sheet-up']::view-transition-new(scrim) {
+  animation: var(--dur-sheet-up) ease both vt-fade-in;
+}
+
+html[data-nav='sheet-down']::view-transition-old(root) {
+  animation: none;
+  opacity: 0;
+}
+
+html[data-nav='sheet-down']::view-transition-new(root) {
+  animation: none;
+}
+
+html[data-nav='sheet-down']::view-transition-old(sheet) {
+  animation: var(--dur-sheet-down) var(--ease-exit) both vt-sheet-out;
+}
+
+html[data-nav='sheet-down']::view-transition-old(scrim) {
+  animation: var(--dur-sheet-down) ease both vt-fade-out;
+}
+
+/* ==================================================================
+   SEGMENTS (in-screen): the content slides 24 px toward the tapped
+   segment and fades; the white thumb slides across.
+   ================================================================== */
+
+html[data-nav^='seg']::view-transition-old(root),
+html[data-nav^='seg']::view-transition-new(root) {
+  animation: none;
+}
+
+html[data-nav^='seg']::view-transition-group(seg-content),
+html[data-nav^='seg']::view-transition-group(seg-thumb) {
+  animation-duration: var(--dur-state);
+  animation-timing-function: var(--ease-emphasized);
+}
+
+html[data-nav='seg-next']::view-transition-old(seg-content) {
+  animation: 140ms var(--ease-exit) both vt-seg-out-to-left;
+}
+
+html[data-nav='seg-next']::view-transition-new(seg-content) {
+  animation: 220ms var(--ease-emphasized) 60ms both vt-seg-in-from-right;
+}
+
+html[data-nav='seg-prev']::view-transition-old(seg-content) {
+  animation: 140ms var(--ease-exit) both vt-seg-out-to-right;
+}
+
+html[data-nav='seg-prev']::view-transition-new(seg-content) {
+  animation: 220ms var(--ease-emphasized) 60ms both vt-seg-in-from-left;
+}
+
+/* FADE: a plain short cross-fade (flows, unknown jumps, reduce motion). */
+
+html[data-nav='fade']::view-transition-group(*) {
+  animation-duration: 150ms;
+}

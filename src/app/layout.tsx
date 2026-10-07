@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import { NavProvider } from '@/lib/nav/NavProvider';
 import './globals.css';
 import './motion.css';
+import '../lib/nav/nav.css';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -11,7 +13,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Kain',
+  title: { default: 'Kain', template: '%s · Kain' },
   description: 'More nutrition from every peso. Meal plans for your budget and menu costing for carinderias.',
   applicationName: 'Kain',
 };
@@ -27,7 +29,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={jakarta.variable}>
       <body>
-        <div className="app">{children}</div>
+        <div id="app" className="app">
+          <NavProvider>{children}</NavProvider>
+        </div>
       </body>
     </html>
   );
