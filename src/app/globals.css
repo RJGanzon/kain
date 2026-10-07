@@ -111,6 +111,8 @@ body {
 html {
   background: var(--bg);
   -webkit-text-size-adjust: 100%;
+  /* The designs use the browser default; set line-height explicitly where a design does. */
+  line-height: normal;
 }
 
 body {

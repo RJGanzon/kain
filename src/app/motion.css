@@ -1,0 +1,71 @@
+/* ------------------------------------------------------------------
+   In-screen motion. Only transform, opacity and small paint changes,
+   so it stays smooth on a low-end Android phone.
+   ------------------------------------------------------------------ */
+
+/* Bars grow in when they first appear, then ease to new values. */
+.meter-fill {
+  height: 100%;
+  width: var(--meter);
+  transition: width 600ms var(--ease-emphasized);
+}
+
+@starting-style {
+  .meter-fill {
+    width: 0;
+  }
+}
+
+/* The nutrition ring sweeps in the same way. */
+.ring-fill {
+  stroke-dasharray: var(--ring);
+  transition: stroke-dasharray 700ms var(--ease-emphasized);
+}
+
+@starting-style {
+  .ring-fill {
+    stroke-dasharray: var(--ring-zero);
+  }
+}
+
+/* Spinner (Connecting to Google). */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 0.9s linear infinite;
+}
+
+/* A checkbox tick pops in. */
+@keyframes tick-in {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+
+.tick-in {
+  animation: tick-in 180ms var(--ease-emphasized);
+}
+
+/* The mic halo breathes while listening. */
+@keyframes halo {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 10px rgba(255, 200, 58, 0.35),
+      0 0 0 22px rgba(255, 200, 58, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 0 14px rgba(255, 200, 58, 0.3),
+      0 0 0 28px rgba(255, 200, 58, 0.1);
+  }
+}
+
+.mic-listening {
+  animation: halo 1.6s ease-in-out infinite;
+}
