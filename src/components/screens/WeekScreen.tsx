@@ -1,9 +1,9 @@
 'use client';
 
 import { Check } from 'lucide-react';
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Meter } from '@/components/ui/Meter';
-import { TIER_LABEL, shortDate } from '@/components/ui/PriceLabels';
+import { manilaToday, shortDate, TIER_LABEL } from '@/components/ui/PriceLabels';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { SourceNote } from '@/components/ui/SourceNote';
 import { cn } from '@/lib/cn';
@@ -22,10 +22,10 @@ function barColor(v: number): string {
 }
 
 /** "650 g · Estimated price, Oct 5" */
-function itemMeta(s: ShopItem): string {
+function itemMeta(s: ShopItem, today: string): string {
   const source = s.price.tier === 'estimate' ? 'Estimated price' : `${TIER_LABEL[s.price.tier]} price`;
   const extra = s.leftOver ? ` · ${s.leftOver} left over` : '';
-  return `${s.label}${extra} · ${source}, ${shortDate(s.price.observedAt)}`;
+  return `${s.label}${extra} · ${source}, ${shortDate(s.price.observedAt, today)}`;
 }
 
 export function WeekScreen() {
@@ -36,17 +36,36 @@ export function WeekScreen() {
   // shown day again goes back to the average.
   const [dayFocus, setDayFocus] = useState(false);
   const [ticked, setTicked] = useDeviceState<string[]>('kain:shop-ticked', []);
+  // Draw the first rows with the screen and the rest once the phone is idle,
+  // so the slide-in starts sooner (the list runs below the fold anyway).
+  const [allRows, setAllRows] = useState(false);
+  useEffect(() => {
+    if (allRows || !plan) return;
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(() => setAllRows(true), { timeout: 600 });
+      return () => cancelIdleCallback(id);
+    }
+    const id = setTimeout(() => setAllRows(true), 300);
+    return () => clearTimeout(id);
+  }, [allRows, plan]);
   const weekdays = useMemo(() => planWeekdays(plan?.days.length ?? 7), [plan?.days.length]);
+  const today = manilaToday();
 
   const shown = plan ? (dayFocus ? plan.days[Math.min(day, plan.days.length - 1)].coverage : plan.average) : null;
   const animalDays = plan ? plan.days.filter((d) => d.animalDay).length : 0;
   const leftPerDay = plan && state ? state.family.budget - plan.total / plan.days.length : 0;
   const over = plan?.days.some((d) => d.over) ?? false;
-  const groups = plan
-    ? CATEGORY_ORDER.map((c) => ({ cat: c, items: plan.shop.filter((s) => s.category === c).sort((a, b) => b.cost - a.cost) })).filter(
-        (g) => g.items.length,
-      )
-    : [];
+  const groups: Array<{ cat: (typeof CATEGORY_ORDER)[number]; items: ShopItem[] }> = [];
+  let budgetRows = allRows ? Infinity : 8;
+  for (const cat of CATEGORY_ORDER) {
+    if (!plan || budgetRows <= 0) break;
+    const items = plan.shop
+      .filter((s) => s.category === cat)
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, budgetRows);
+    budgetRows -= items.length;
+    if (items.length) groups.push({ cat, items });
+  }
 
   const pickDay = (i: number) => {
     if (i === day && dayFocus) setDayFocus(false);
@@ -169,7 +188,7 @@ export function WeekScreen() {
                     </span>
                     <span className={cn('min-w-0 flex-1 transition-opacity duration-150', on && 'opacity-50')}>
                       <span className={cn('block text-[15px] font-bold', on && 'line-through')}>{shortName(s.name)}</span>
-                      <span className="block text-[12px] text-muted">{itemMeta(s)}</span>
+                      <span className="block text-[12px] text-muted">{itemMeta(s, today)}</span>
                     </span>
                     <span className={cn('text-[15px] font-extrabold', on && 'opacity-50')}>{peso(s.cost)}</span>
                   </button>

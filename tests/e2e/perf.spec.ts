@@ -5,7 +5,11 @@ import { settled } from './helpers';
  * Transition smoothness on a slow phone: CPU throttled 6×. For each
  * transition we measure how long a tap takes to start the animation and
  * the longest main-thread frame while it runs.
+ *
+ * Timing depends on whatever else the computer is doing, so this runs on
+ * demand, on a quiet machine: PERF=1 npx playwright test --project perf
  */
+test.skip(!process.env.PERF, 'set PERF=1 to measure transition timing');
 
 interface Sample {
   kind: string;

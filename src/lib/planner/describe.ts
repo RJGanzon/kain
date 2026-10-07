@@ -34,19 +34,24 @@ export const CATEGORY_ORDER: Category[] = ['staple', 'fish', 'meat', 'egg', 'leg
 
 const TZ = 'Asia/Manila';
 
+// Formatters are slow to create on a low-end phone: make each one once.
+let longFmt: Intl.DateTimeFormat | null = null;
+let weekdayShort: Intl.DateTimeFormat | null = null;
+let weekdayLong: Intl.DateTimeFormat | null = null;
+
 /** "Thursday, October 8" (Philippine time). */
 export function longDate(d: Date = new Date()): string {
-  return d.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', timeZone: TZ });
+  longFmt ??= new Intl.DateTimeFormat('en-PH', { weekday: 'long', month: 'long', day: 'numeric', timeZone: TZ });
+  return longFmt.format(d);
 }
 
 /** Day labels for a plan starting today: [{ short: 'Thu', long: 'Thursday' }, …]. */
 export function planWeekdays(count: number, start: Date = new Date()): Array<{ short: string; long: string }> {
+  weekdayShort ??= new Intl.DateTimeFormat('en-PH', { weekday: 'short', timeZone: TZ });
+  weekdayLong ??= new Intl.DateTimeFormat('en-PH', { weekday: 'long', timeZone: TZ });
   return Array.from({ length: count }, (_, i) => {
     const d = new Date(start.getTime() + i * 86_400_000);
-    return {
-      short: d.toLocaleDateString('en-PH', { weekday: 'short', timeZone: TZ }),
-      long: d.toLocaleDateString('en-PH', { weekday: 'long', timeZone: TZ }),
-    };
+    return { short: weekdayShort!.format(d), long: weekdayLong!.format(d) };
   });
 }
 

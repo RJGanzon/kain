@@ -60,8 +60,9 @@ test('no console errors on any screen', async ({ page }) => {
 
   await tabs.getByRole('link', { name: 'Log' }).click();
   await settled(page, '/log');
+  await page.getByLabel('What you bought and how much you paid').fill('isang kilo kamatis 110');
   await page.getByRole('button', { name: 'Add' }).click();
-  await expect(page.getByText('Kamatis · 1 kg').first()).toBeVisible();
+  await expect(page.getByText('Kamatis price added for San Nicolas Market.')).toBeVisible();
 
   await tabs.getByRole('link', { name: 'Prices' }).click();
   await settled(page, '/prices');

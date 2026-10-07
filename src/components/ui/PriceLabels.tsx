@@ -36,13 +36,19 @@ export function changeOf(price: number, prev: number | null): { text: string; to
   return { text: `▼ ${pct}%`, tone: 'good', ratio: ch };
 }
 
+// Formatters are slow to create on a low-end phone: make each one once.
+let shortFmt: Intl.DateTimeFormat | null = null;
+let dayFmt: Intl.DateTimeFormat | null = null;
+
 /** "Oct 5", or "Today". Dates are yyyy-mm-dd in Philippine time. */
 export function shortDate(iso: string, today: string = manilaToday()): string {
   if (iso === today) return 'Today';
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  shortFmt ??= new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return shortFmt.format(new Date(`${iso}T00:00:00Z`));
 }
 
 /** Today's date in the Philippines, yyyy-mm-dd. */
 export function manilaToday(now: Date = new Date()): string {
-  return now.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+  dayFmt ??= new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' });
+  return dayFmt.format(now);
 }

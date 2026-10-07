@@ -4,7 +4,7 @@ import { Search } from 'lucide-react';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Pill } from '@/components/ui/Pill';
-import { changeOf, shortDate, TierPill } from '@/components/ui/PriceLabels';
+import { changeOf, manilaToday, shortDate, TierPill } from '@/components/ui/PriceLabels';
 import { SourceNote } from '@/components/ui/SourceNote';
 import { cn } from '@/lib/cn';
 import { useCatalog } from '@/lib/data/catalog';
@@ -54,6 +54,7 @@ export function PricesScreen() {
   const prices = usePrices(catalog);
   const market = catalog.markets.find((m) => m.id === catalog.marketId) ?? catalog.markets[0];
 
+  const today = manilaToday();
   const q = query.trim().toLowerCase();
   const rows = [...catalog.ingredients]
     .sort(order)
@@ -142,7 +143,7 @@ export function PricesScreen() {
                   <div className="text-[15px] font-bold">{shortName(i.name)}</div>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <TierPill tier={p.tier} />
-                    <span className="text-[12px] text-muted">{shortDate(p.observedAt)}</span>
+                    <span className="text-[12px] text-muted">{shortDate(p.observedAt, today)}</span>
                   </div>
                 </div>
                 <div className="text-right">
