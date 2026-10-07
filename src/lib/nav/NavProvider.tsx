@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react';
 import { bindRouter, initNav, onPopState } from './nav';
+import { WARM_ROUTES } from './routes';
 import { signalCommit } from './transition';
 
 /** Tells waiting transitions that the new route is in the DOM. */
@@ -45,6 +46,17 @@ export function NavProvider({ children }: { children: ReactNode }) {
     window.addEventListener('popstate', onPopState, { capture: true });
     return () => window.removeEventListener('popstate', onPopState, { capture: true });
   }, []);
+
+  // Once the first screen is idle, load the other screens so no tap waits on the network.
+  useEffect(() => {
+    const warm = () => WARM_ROUTES.forEach((href) => router.prefetch(href));
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(warm, { timeout: 3000 });
+      return () => cancelIdleCallback(id);
+    }
+    const id = setTimeout(warm, 1500);
+    return () => clearTimeout(id);
+  }, [router]);
 
   return (
     <>

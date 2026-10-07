@@ -20,6 +20,12 @@ export const TAB_ROOTS: Record<TabId, string> = {
   prices: '/prices',
 };
 
+/**
+ * Screens to load ahead of time once the app is idle, so the first tap on
+ * each is as quick as the second. All are small and static.
+ */
+export const WARM_ROUTES = ['/plan', '/plan/week', '/plan/setup', '/eatery', '/eatery/pot/adobong-manok', '/log', '/prices', '/business'];
+
 export function pathOf(url: string): string {
   const q = url.indexOf('?');
   return q === -1 ? url : url.slice(0, q);

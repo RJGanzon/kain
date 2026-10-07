@@ -33,10 +33,14 @@ export function runTransition(kind: TransitionKind, update: () => void | Promise
   }
   const html = document.documentElement;
   const mine = ++token;
+  performance.mark('kain:transition');
   html.dataset.nav = prefersReducedMotion() ? 'fade' : kind;
   let vt: ViewTransition;
   try {
-    vt = document.startViewTransition(update);
+    vt = document.startViewTransition(() => {
+      performance.mark('kain:update');
+      return update();
+    });
   } catch {
     delete html.dataset.nav;
     return Promise.resolve().then(update);
@@ -76,6 +80,7 @@ export function waitForCommit(timeoutMs = 1500): Promise<void> {
 }
 
 export function signalCommit(): void {
+  if (waiters.length) performance.mark('kain:commit');
   const pending = waiters;
   waiters = [];
   for (const finish of pending) finish();
