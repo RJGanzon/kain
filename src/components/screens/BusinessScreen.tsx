@@ -1,13 +1,19 @@
 'use client';
 
+import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { FeatureCheck } from '@/components/ui/bits';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
+import { useSession } from '@/lib/auth/session';
 import { cn } from '@/lib/cn';
+import { activateBusinessDemo, BUSINESS_DEMO } from '@/lib/eatery/business';
+import { usePlanTier } from '@/lib/eatery/store';
+import { useHydrated } from '@/lib/hydrated';
 import { BackButton } from '@/lib/nav/links';
 import { nav } from '@/lib/nav/nav';
 import { Screen } from '@/lib/nav/Screen';
+import { backendConfigured } from '@/lib/supabase/client';
 
 const FEATURES = [
   { title: 'Unlimited dish costing', sub: 'Free plan covers 3 dishes' },
@@ -17,9 +23,31 @@ const FEATURES = [
   { title: 'Menu cost trend and export', sub: 'Copy your costed menu to Sheets or Excel' },
 ];
 
-/** Business plan. No real payments in this build (Phase 9 adds the demo activation). */
+/**
+ * Business plan (KAIN_BUILD_PROMPT §5.8). No real payments in this build:
+ * GCash and Maya are a choice only; the plan starts through a clearly
+ * labelled demo activation.
+ */
 export function BusinessScreen() {
   const [pay, setPay] = useState<'GCash' | 'Maya'>('GCash');
+  const [tier] = usePlanTier();
+  const hydrated = useHydrated();
+  const { session } = useSession();
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const active = hydrated && tier === 'business';
+  const needsSignIn = hydrated && backendConfigured() && !session;
+
+  const activate = async () => {
+    setBusy(true);
+    setNote(null);
+    const res = await activateBusinessDemo();
+    setBusy(false);
+    if (res.ok) nav.dismiss('/eatery');
+    else if (res.needsSignIn) nav.replace('/signin', 'fade');
+    else setNote(res.message);
+  };
+
   return (
     <Screen presentation="sheet" label="Business plan" scrollClassName="bg-brand">
       <div className="flex min-h-full flex-col">
@@ -27,9 +55,7 @@ export function BusinessScreen() {
           <BackButton fallback="/eatery" kind="sheet-down" label="Close" icon="close" tone="glass" />
           <div className="flex flex-1 flex-col items-center justify-center gap-2.5 pb-7">
             <Logo height={58} priority />
-            <span className="rounded-full bg-ink px-3 py-[5px] text-[12px] font-extrabold tracking-[0.08em] text-brand uppercase">
-              for Business
-            </span>
+            <span className="rounded-full bg-ink px-3 py-[5px] text-[12px] font-extrabold tracking-[0.08em] text-brand uppercase">for Business</span>
           </div>
         </div>
 
@@ -49,30 +75,59 @@ export function BusinessScreen() {
           </div>
 
           <div className="mt-auto flex flex-col gap-2">
-            <div id="pay-with" className="text-[13px] font-bold text-muted">
-              Pay with
-            </div>
-            <div role="radiogroup" aria-labelledby="pay-with" className="grid grid-cols-2 gap-2">
-              {(['GCash', 'Maya'] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  role="radio"
-                  aria-checked={pay === p}
-                  onClick={() => setPay(p)}
-                  className={cn(
-                    'press h-12 rounded-[14px] bg-white text-[15px] font-extrabold text-ink',
-                    pay === p ? 'border-2 border-ink' : 'border border-line',
-                  )}
+            {active ? (
+              <>
+                <div role="status" className="flex items-center gap-2 rounded-[16px] bg-good-bg px-3.5 py-3 text-[14px] font-bold text-good">
+                  <Check size={16} strokeWidth={3} aria-hidden="true" />
+                  You&apos;re on the Business plan.
+                </div>
+                <Button onClick={() => nav.dismiss('/eatery')}>Back to my eatery</Button>
+              </>
+            ) : (
+              <>
+                <div id="pay-with" className="text-[13px] font-bold text-muted">
+                  Pay with
+                </div>
+                <div role="radiogroup" aria-labelledby="pay-with" className="grid grid-cols-2 gap-2">
+                  {(['GCash', 'Maya'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      role="radio"
+                      aria-checked={pay === p}
+                      onClick={() => setPay(p)}
+                      className={cn('press h-12 rounded-[14px] bg-white text-[15px] font-extrabold text-ink', pay === p ? 'border-2 border-ink' : 'border border-line')}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+                {note ? (
+                  <p role="status" className="rounded-[14px] bg-warn-bg px-3.5 py-2.5 text-[13px] leading-[1.45] font-semibold text-warn">
+                    {note}
+                  </p>
+                ) : null}
+                <Button
+                  className="mt-1.5"
+                  onClick={() =>
+                    needsSignIn ? nav.replace('/signin', 'fade') : setNote(`${pay} payments aren't set up yet, so nothing is charged in this version.`)
+                  }
                 >
-                  {p}
-                </button>
-              ))}
-            </div>
-            <Button className="mt-1.5" onClick={() => nav.dismiss('/eatery')}>
-              Start Business plan
-            </Button>
-            <div className="text-center text-[12px] font-semibold text-muted">Cancel anytime. Families always use Kain free.</div>
+                  {needsSignIn ? 'Sign in to start' : 'Start Business plan'}
+                </Button>
+                {BUSINESS_DEMO && !needsSignIn ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void activate()}
+                    className="press hit h-11 rounded-[14px] border border-dashed border-tier-est-border text-[14px] font-bold text-ink disabled:opacity-60"
+                  >
+                    {busy ? 'Starting…' : 'Demo: activate without payment'}
+                  </button>
+                ) : null}
+                <div className="text-center text-[12px] font-semibold text-muted">Cancel anytime. Families always use Kain free.</div>
+              </>
+            )}
           </div>
         </div>
       </div>

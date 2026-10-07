@@ -57,7 +57,7 @@ test('no console errors on any screen', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Business', exact: true }).click();
   await settled(page, '/business');
-  await page.getByRole('radio', { name: 'Maya' }).click();
+  await expect(page.getByText("You're on the Business plan.")).toBeVisible();
   await page.getByRole('button', { name: 'Close' }).click();
   await settled(page, '/eatery');
 
