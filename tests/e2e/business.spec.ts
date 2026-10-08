@@ -1,19 +1,16 @@
 import { expect, test } from '@playwright/test';
-import { admin } from '../db/local';
-import { hasBackend } from './account';
 import { settled } from './helpers';
-import { removeSeedUsers, seedEateryDay, seedUsers } from './seed';
+import { seedEateryDay } from './seed';
 
-/** Phase 9: the Business plan, demo activation only (no real payments). */
+/** Phase 9: the Business plan, demo activation only (no real payments); kept on the phone. */
 
-test.afterEach(removeSeedUsers);
-
-test('a guest is asked to sign in before starting', async ({ page }) => {
+test('starting the plan takes no payment', async ({ page }) => {
   await page.goto('/business');
   await settled(page, '/business');
-  test.skip(!(await hasBackend(page)), 'no backend in this build');
-  await expect(page.getByRole('button', { name: 'Sign in to start' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Demo: activate without payment' })).toHaveCount(0);
+  await page.getByRole('radio', { name: 'Maya' }).click();
+  await page.getByRole('button', { name: 'Start Business plan' }).click();
+  await expect(page.getByText("Maya payments aren't set up yet, so nothing is charged in this version.")).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Demo: activate without payment' })).toBeVisible();
 });
 
 test('a free eatery at 3 dishes upgrades through the demo activation', async ({ page }) => {
@@ -25,16 +22,9 @@ test('a free eatery at 3 dishes upgrades through the demo activation', async ({ 
 
   await page.getByRole('link', { name: 'Add dish' }).click();
   await settled(page, '/business');
-  await page.getByRole('button', { name: 'Start Business plan' }).click();
-  await expect(page.getByText("GCash payments aren't set up yet, so nothing is charged in this version.")).toBeVisible();
   await page.getByRole('button', { name: 'Demo: activate without payment' }).click();
   await settled(page, '/eatery');
   await expect(page.getByRole('link', { name: 'Business', exact: true })).toBeVisible();
-
-  const owner = seedUsers[0];
-  if (owner) {
-    await expect.poll(async () => (await admin().from('profiles').select('plan').eq('id', owner.id).single()).data?.plan).toBe('business');
-  }
 
   await page.getByRole('radio', { name: 'Menu costs' }).click();
   await expect(page.getByText('Price spike alerts and cheaper substitutes')).toHaveCount(0);
@@ -45,7 +35,9 @@ test('a free eatery at 3 dishes upgrades through the demo activation', async ({ 
   await settled(page, '/eatery');
   await expect(page.getByRole('heading', { name: /Menu · 4 dishes/ })).toBeVisible();
 
-  // Opening the plan again says it's active.
+  // The plan is kept on the phone.
+  await page.reload();
+  await expect(page.getByRole('link', { name: 'Business', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Business', exact: true }).click();
   await settled(page, '/business');
   await expect(page.getByText("You're on the Business plan.")).toBeVisible();

@@ -7,7 +7,6 @@ import { Overline } from '@/components/ui/bits';
 import { Button } from '@/components/ui/Button';
 import { Meter } from '@/components/ui/Meter';
 import { NumberField, toNumber } from '@/components/ui/NumberField';
-import { SyncNote } from '@/components/ui/SyncNote';
 import { recordSale, removePot, usePot, type PotView } from '@/lib/eatery/store';
 import { kg, peso } from '@/lib/format';
 import { useHydrated } from '@/lib/hydrated';
@@ -120,7 +119,6 @@ function PotDetail({ view }: { view: PotView }) {
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div className="text-[13px] font-bold text-muted">Record a sale</div>
-            <SyncNote />
           </div>
           <div className="grid grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)] gap-2">
             <button

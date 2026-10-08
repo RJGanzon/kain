@@ -1,6 +1,4 @@
-# Kain build plan (Phase 1)
-
-Status: **All nine phases are built and live at https://kain-two.vercel.app (sections 10–12). Google and Facebook sign-in still need your OAuth apps (section 12).**
+Status: **This is the `local-only` branch: Kain with no server. Everything is stored on the phone (section 13). The Supabase version is on `main`.**
 
 Phase 1 was approved on Oct 8, 2026, and you then asked for the remaining phases in one go. Your answers are recorded in section 9.
 
@@ -314,3 +312,28 @@ The old Kain deployment isn't in this Vercel account, so nothing was removed.
    - Until then, the buttons explain that sign-in isn't switched on, and families can still use everything without an account.
 3. **Real prices.** Load dated market prices into `prices` (contributor, DA market or DA average tiers). Then set `sample_prices` to off in `app_flags`, and the "Sample data" labels disappear.
 4. **Redeploying.** After changes, run `npx vercel deploy --prod` from this folder. Database changes go out with `supabase db push`, and function changes with `supabase functions deploy log-purchase --use-api` (the project is linked).
+
+---
+
+## 13. The `local-only` branch
+
+This branch keeps all data on the phone, so there's no Supabase project, sign-in or server to set up.
+
+| | `main` (Supabase) | `local-only` (this branch) |
+|---|---|---|
+| Prices and recipes | From Supabase, cached on the phone | Bundled with the app (the sample estimates), with "Sample data" labels |
+| Your purchase logs | On the phone, then shared through the `log-purchase` function | On the phone only. Close prices still become "Your log" prices for you. |
+| Plan settings, eatery menu, pots, sales | On the phone, synced to your account | On the phone only |
+| First screen | Sign in (Google, Facebook) or plan without an account | Welcome: pick family or eatery, no account |
+| Eatery | Needs an account | Works straight away |
+| Business plan (demo) | Saved to your account | Saved on the phone |
+| Keeping data safe | Your account | Settings → "Your data stays on this phone" → **Save a backup** (a `.json` file) and **Restore** |
+
+What changed:
+- **Removed:** the Supabase client, sign-in, the upload queue, the auth callback page, the `supabase/` folder (migration, seed SQL, Edge Function) and the database tests.
+- **Moved:** the ±30% price check now lives in `src/lib/log/price-check.ts`.
+- **Kept as-is:** the phone database layout, unused tables included, so a phone that ran the `main` version can open this one.
+
+Also on this branch, and worth bringing to `main`: the app no longer reloads the page when the connection comes back. Serwist did that by default, which would throw away what someone was typing on patchy signal.
+
+Tests: 61 unit tests, and 64 browser tests (backup and restore included).

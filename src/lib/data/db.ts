@@ -2,10 +2,10 @@ import Dexie, { type Table } from 'dexie';
 import type { Ingredient, Market, Price, PriceStatus, Recipe } from './types';
 
 /**
- * Kain's on-device database (IndexedDB). It holds the price catalog for the
- * chosen market, so planning works offline, and everything a person records
- * (purchase logs, eatery menu, pots, sales). Writes for the server wait in
- * `outbox` until the phone is online and signed in.
+ * Kain's on-device database (IndexedDB): everything a person records
+ * (purchase logs, eatery menu, pots, sales). This build keeps all data on
+ * the phone. (The catalog and outbox tables are kept, unused, so the
+ * database layout matches the Supabase build on main.)
  */
 
 export interface CachedPrice extends Price {

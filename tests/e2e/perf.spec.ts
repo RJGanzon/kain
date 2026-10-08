@@ -79,7 +79,7 @@ test('transitions stay smooth with the CPU slowed 6×', async ({ page }) => {
 
   await page.getByRole('link', { name: 'See week' }).click();
   await settled(page, '/plan/week');
-  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
   await settled(page, '/plan');
   await tabs.getByRole('link', { name: 'Eatery' }).click();
   await settled(page, '/eatery');

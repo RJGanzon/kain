@@ -20,8 +20,6 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: 'Kain', statusBarStyle: 'default' },
   icons: { apple: '/icons/apple-touch-icon.png' },
   formatDetection: { telephone: false },
-  // Lets tests tell whether this build talks to a backend.
-  other: process.env.NEXT_PUBLIC_SUPABASE_URL ? { 'kain-backend': '1' } : {},
 };
 
 export const viewport: Viewport = {
@@ -35,7 +33,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={jakarta.variable}>
       <body>
-        <SerwistProvider swUrl="/serwist/sw.js" disable={process.env.NODE_ENV === 'development'}>
+        {/* No reload when the connection comes back: on patchy market signal that would throw
+            away what someone is typing. Kain picks up again on its own. */}
+        <SerwistProvider swUrl="/serwist/sw.js" disable={process.env.NODE_ENV === 'development'} reloadOnOnline={false}>
           <div id="app" className="app">
             <NavProvider>{children}</NavProvider>
           </div>

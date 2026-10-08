@@ -5,15 +5,14 @@ import { manilaToday } from '@/components/ui/PriceLabels';
 import { useCatalog } from '@/lib/data/catalog';
 import { db, newId, type MenuItem, type Pot, type PotSale } from '@/lib/data/db';
 import { liveStore } from '@/lib/data/live';
-import { enqueue } from '@/lib/data/outbox';
 import type { Ingredient, Recipe } from '@/lib/data/types';
 import { usePrices } from '@/lib/log/prices';
 import { useDeviceState } from '@/lib/store/device';
 import { costPerOrder, DEFAULT_EXTRAS, defaultLatePrice, potNumbers, type MenuDish, type PotNumbers } from './math';
 
 /**
- * The eatery's menu, today's pots and their sales, kept on the phone and
- * synced to the account through the outbox (KAIN_BUILD_PROMPT §5.6–5.7).
+ * The eatery's menu, today's pots and their sales, kept on this phone
+ * (KAIN_BUILD_PROMPT §5.6–5.7).
  */
 
 export const FREE_DISH_LIMIT = 3;
@@ -30,7 +29,7 @@ export function preloadEatery() {
 
 export type PlanTier = 'free' | 'business';
 
-/** The eatery's plan on this phone (set from the account, or the demo activation). */
+/** The eatery's plan on this phone (set by the demo activation). */
 export function usePlanTier() {
   return useDeviceState<PlanTier>('kain:plan', 'free');
 }
@@ -131,15 +130,12 @@ export async function addDish(recipe: Recipe, price: number, orderG: number): Pr
     createdAt: Date.now(),
   };
   await d.menu.add(item);
-  await enqueue('menu', item.id, item);
   return item;
 }
 
 export async function updateDish(id: string, patch: Partial<Pick<MenuItem, 'price' | 'orderG' | 'latePrice' | 'extras'>>): Promise<void> {
   const d = db()!;
   await d.menu.update(id, patch);
-  const item = await d.menu.get(id);
-  if (item) await enqueue('menu', id, item);
 }
 
 export async function removeDish(id: string): Promise<void> {
@@ -150,13 +146,11 @@ export async function removeDish(id: string): Promise<void> {
     await d.pots.bulkDelete(pots);
     await d.menu.delete(id);
   });
-  await enqueue('menu-delete', id, id);
 }
 
 export async function cookPot(menuItemId: string, cookedKg: number): Promise<Pot> {
   const pot: Pot = { id: newId(), menuItemId, date: manilaToday(), cookedKg, cookedAt: Date.now() };
   await db()!.pots.add(pot);
-  await enqueue('pot', pot.id, pot);
   return pot;
 }
 
@@ -166,7 +160,6 @@ export async function removePot(id: string): Promise<void> {
     await d.sales.where('potId').equals(id).delete();
     await d.pots.delete(id);
   });
-  await enqueue('pot-delete', id, id);
 }
 
 /** +n orders sold, −1 to undo, or a correction (weighing the pot). */
@@ -174,5 +167,4 @@ export async function recordSale(potId: string, orders: number): Promise<void> {
   if (!orders) return;
   const sale: PotSale = { id: newId(), potId, orders, createdAt: Date.now() };
   await db()!.sales.add(sale);
-  await enqueue('sale', sale.id, sale);
 }

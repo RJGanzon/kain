@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { FeatureCheck } from '@/components/ui/bits';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
-import { useSession } from '@/lib/auth/session';
 import { cn } from '@/lib/cn';
 import { activateBusinessDemo, BUSINESS_DEMO } from '@/lib/eatery/business';
 import { usePlanTier } from '@/lib/eatery/store';
@@ -13,7 +12,6 @@ import { useHydrated } from '@/lib/hydrated';
 import { BackButton } from '@/lib/nav/links';
 import { nav } from '@/lib/nav/nav';
 import { Screen } from '@/lib/nav/Screen';
-import { backendConfigured } from '@/lib/supabase/client';
 
 const FEATURES = [
   { title: 'Unlimited dish costing', sub: 'Free plan covers 3 dishes' },
@@ -32,11 +30,9 @@ export function BusinessScreen() {
   const [pay, setPay] = useState<'GCash' | 'Maya'>('GCash');
   const [tier] = usePlanTier();
   const hydrated = useHydrated();
-  const { session } = useSession();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const active = hydrated && tier === 'business';
-  const needsSignIn = hydrated && backendConfigured() && !session;
 
   const activate = async () => {
     setBusy(true);
@@ -44,7 +40,6 @@ export function BusinessScreen() {
     const res = await activateBusinessDemo();
     setBusy(false);
     if (res.ok) nav.dismiss('/eatery');
-    else if (res.needsSignIn) nav.replace('/signin', 'fade');
     else setNote(res.message);
   };
 
@@ -107,15 +102,10 @@ export function BusinessScreen() {
                     {note}
                   </p>
                 ) : null}
-                <Button
-                  className="mt-1.5"
-                  onClick={() =>
-                    needsSignIn ? nav.replace('/signin', 'fade') : setNote(`${pay} payments aren't set up yet, so nothing is charged in this version.`)
-                  }
-                >
-                  {needsSignIn ? 'Sign in to start' : 'Start Business plan'}
+                <Button className="mt-1.5" onClick={() => setNote(`${pay} payments aren't set up yet, so nothing is charged in this version.`)}>
+                  Start Business plan
                 </Button>
-                {BUSINESS_DEMO && !needsSignIn ? (
+                {BUSINESS_DEMO ? (
                   <button
                     type="button"
                     disabled={busy}

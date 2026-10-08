@@ -1,4 +1,4 @@
-/** Kain's data, as the app uses it (camelCase; see supabase/migrations for the tables). */
+/** Kain's data, as the app uses it. */
 
 export type Unit = 'kg' | 'L' | 'pc' | 'bundle' | 'can' | 'pack';
 export type Tier = 'contributor' | 'user_log' | 'da_market' | 'da_avg' | 'estimate';

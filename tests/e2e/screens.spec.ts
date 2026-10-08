@@ -4,10 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { ready, settled } from './helpers';
-import { hasBackend, makeUser, signInAs } from './account';
-import { removeSeedUsers, seedEateryDay, seedUsers } from './seed';
-
-test.afterEach(removeSeedUsers);
+import { seedEateryDay } from './seed';
 
 /**
  * Each screen at 390×844 against its design render (tests/visual/ref, made
@@ -25,21 +22,8 @@ const withSampleDay = (then?: (page: Page, pots: string[]) => Promise<void>) => 
 };
 
 const SCREENS: Array<{ name: string; path: string; act?: (page: Page) => Promise<void> }> = [
-  { name: 'SignIn', path: '/signin' },
-  {
-    name: 'SignIn-role',
-    path: '/signin',
-    act: async (page) => {
-      // Back from Google with a new account: the role picker.
-      if (await hasBackend(page)) {
-        const u = await makeUser();
-        seedUsers.push(u);
-        await signInAs(page, u);
-        await page.reload();
-      }
-      await page.getByRole('heading', { name: 'How will you use Kain?' }).waitFor();
-    },
-  },
+  // The welcome screen is the Sign in design's role picker (no accounts in this build).
+  { name: 'SignIn-role', path: '/welcome' },
   { name: 'Setup', path: '/plan/setup' },
   { name: 'Main', path: '/plan' },
   { name: 'Week', path: '/plan/week' },
