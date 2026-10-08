@@ -1,0 +1,19 @@
+# Local settings never go to Vercel (production values are set on the project).
+.env
+.env.*
+
+# Not needed to build the app
+.next
+node_modules
+test-results
+playwright-report
+tests
+design
+reference
+docs
+kain-claude-code-kit.zip
+KAIN_BUILD_PROMPT.md
+supabase/.temp
+supabase/.branches
+supabase/migrations
+supabase/seed.sql

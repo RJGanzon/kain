@@ -1,6 +1,6 @@
 # Kain build plan (Phase 1)
 
-Status: **All nine phases are built (sections 10 and 11). Not deployed yet: see section 12.**
+Status: **All nine phases are built and live at https://kain-two.vercel.app (sections 10–12). Google and Facebook sign-in still need your OAuth apps (section 12).**
 
 Phase 1 was approved on Oct 8, 2026, and you then asked for the remaining phases in one go. Your answers are recorded in section 9.
 
@@ -292,13 +292,25 @@ The browser tests cover:
 
 ---
 
-## 12. Going live (needs you)
+## 12. Live deployment
 
-1. **Vercel.** Run `! npx vercel login` in Claude Code, and I'll create a new project and deploy. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `NEXT_PUBLIC_BUSINESS_DEMO=1` on the project. Without the Supabase values, the deploy still works on the bundled sample prices, on the phone only.
-2. **Supabase (hosted).** Create a project, then:
-   - run `supabase link`, then `supabase db push` for the migration
-   - load the seed (`supabase/seed.sql`)
-   - run `supabase functions deploy log-purchase`
-   - in Auth → URL configuration, add `https://<your-domain>/auth/callback` as a redirect URL
-3. **Google and Facebook.** Create a Google OAuth client and a Facebook app. Both use the redirect URI `https://<project-ref>.supabase.co/auth/v1/callback`. Switch the providers on in Supabase with their keys (locally: put the keys in `supabase/.env` and set `enabled = true` in `config.toml`).
-4. **Real prices.** Load dated market prices into `prices` (contributor, DA market or DA average tiers). Then switch off `sample_prices` in `app_flags`, and the "Sample data" labels disappear.
+| Piece | Where | State |
+|---|---|---|
+| App | Vercel project `kain` (rjganzons-projects), https://kain-two.vercel.app | Deployed Oct 8, 2026 from this repo with `vercel deploy --prod`. `.vercelignore` keeps `.env.local` and the tests out of uploads. |
+| Settings on Vercel (production) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_BUSINESS_DEMO=1` | Only public values; no secrets. |
+| Database | Supabase project `Kain` (`xlogulbdjcqjenlkkmcy`, Singapore) | The migration is applied and the seed loaded (3 markets, 36 ingredients, 22 recipes, sample prices). It was empty before. |
+| Edge Function | `log-purchase` on the same project | Deployed. |
+| Check on production | Phone-sized browser | Plan, prices from Supabase cached on the phone, eatery sign-in gate, service worker active, no console errors. |
+
+The old Kain deployment isn't in this Vercel account, so nothing was removed.
+
+### Still needs you
+
+1. **Sign-in URLs.** In Supabase → Authentication → URL Configuration, set the Site URL to `https://kain-two.vercel.app` and add `https://kain-two.vercel.app/auth/callback` to the redirect URLs. Keep `http://localhost:3000/auth/callback` if you want local sign-in too.
+2. **Google and Facebook.**
+   - Create a Google OAuth client and a Facebook app.
+   - Both use the redirect URI `https://xlogulbdjcqjenlkkmcy.supabase.co/auth/v1/callback`.
+   - Switch the providers on in Supabase → Authentication → Providers with their keys.
+   - Until then, the buttons explain that sign-in isn't switched on, and families can still use everything without an account.
+3. **Real prices.** Load dated market prices into `prices` (contributor, DA market or DA average tiers). Then set `sample_prices` to off in `app_flags`, and the "Sample data" labels disappear.
+4. **Redeploying.** After changes, run `npx vercel deploy --prod` from this folder. Database changes go out with `supabase db push`, and function changes with `supabase functions deploy log-purchase --use-api` (the project is linked).
