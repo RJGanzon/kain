@@ -35,7 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={jakarta.variable}>
       <body>
-        <SerwistProvider swUrl="/serwist/sw.js" disable={process.env.NODE_ENV === 'development'}>
+        {/* No reload when the connection comes back: on patchy market signal that would throw
+            away what someone is typing. Kain picks up again on its own. */}
+        <SerwistProvider swUrl="/serwist/sw.js" disable={process.env.NODE_ENV === 'development'} reloadOnOnline={false}>
           <div id="app" className="app">
             <NavProvider>{children}</NavProvider>
           </div>
