@@ -1,6 +1,4 @@
-# Kain build plan (Phase 1)
-
-Status: **All nine phases are built and live at https://kain-two.vercel.app (sections 10–12). Google and Facebook sign-in still need your OAuth apps (section 12).**
+Status: **Kain is a prototype with no backend. Everything is stored on the phone, and prices and recipes ship with the app (section 13). The earlier Supabase version is in the git history at commit `2a1aecf`.**
 
 Phase 1 was approved on Oct 8, 2026, and you then asked for the remaining phases in one go. Your answers are recorded in section 9.
 
@@ -235,6 +233,8 @@ The browser tests cover:
 
 ## 11. Phases 3–9: what was built
 
+This section describes the first build, which used Supabase. Section 13 says what replaced it.
+
 | Phase | What's in it |
 |---|---|
 | 3. Data | One migration with every table in §6, with row security on all of them. A `current_prices` view gives the best accepted tier from the last 14 days, then the latest estimate, plus the price 4 weeks earlier. The seed comes from `reference/mvp/data.js`, with every price marked `estimate` and the "Sample data" label on. Generated TypeScript types. The catalog is cached on the phone (IndexedDB via Dexie) and refreshed at most every 6 hours, timed for idle moments so it never competes with a tap. |
@@ -282,11 +282,8 @@ The browser tests cover:
 
 | Command | What it does |
 |---|---|
-| `npm run db:start` | Starts local Supabase (Docker) with the migration and seed |
-| `supabase functions serve` | Serves `log-purchase` locally |
-| `npm run dev` | Runs the app at http://localhost:3000 (uses `.env.local`) |
+| `npm run dev` | Runs the app at http://localhost:3000 |
 | `npx vitest run` | Unit tests (planner, parser, eatery, nav, price check) |
-| `npm run test:db` | Database and Edge Function tests (needs the two commands above) |
 | `npx playwright test` | Builds the app and runs the browser tests |
 | `PERF=1 npx playwright test --project perf` | Transition timing with the CPU slowed 6× (run on a quiet machine) |
 
@@ -296,21 +293,34 @@ The browser tests cover:
 
 | Piece | Where | State |
 |---|---|---|
-| App | Vercel project `kain` (rjganzons-projects), https://kain-two.vercel.app | Deployed Oct 8, 2026 from this repo with `vercel deploy --prod`. `.vercelignore` keeps `.env.local` and the tests out of uploads. |
-| Settings on Vercel (production) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_BUSINESS_DEMO=1` | Only public values; no secrets. |
-| Database | Supabase project `Kain` (`xlogulbdjcqjenlkkmcy`, Singapore) | The migration is applied and the seed loaded (3 markets, 36 ingredients, 22 recipes, sample prices). It was empty before. |
-| Edge Function | `log-purchase` on the same project | Deployed. |
-| Check on production | Phone-sized browser | Plan, prices from Supabase cached on the phone, eatery sign-in gate, service worker active, no console errors. |
+| App | Vercel project `kain` (rjganzons-projects), https://kain-two.vercel.app | The no-backend build is deployed at `kain-a2dejsaxa-rjganzons-projects.vercel.app`. Production still serves the first (Supabase) build until it's promoted with `npx vercel promote kain-a2dejsaxa-rjganzons-projects.vercel.app`. |
+| Settings on Vercel | `NEXT_PUBLIC_BUSINESS_DEMO=1` | The old `NEXT_PUBLIC_SUPABASE_*` settings are still on the project. This build ignores them, so they can be deleted. |
+| Supabase project `Kain` (`xlogulbdjcqjenlkkmcy`) | Supabase dashboard | No longer used. It still holds the first build's tables and sample data, so it can be paused or deleted. |
 
-The old Kain deployment isn't in this Vercel account, so nothing was removed.
+**Redeploying:** after changes, run `npx vercel deploy --prod` from this folder. `.vercelignore` keeps `.env.local` and the tests out of uploads.
 
-### Still needs you
+---
 
-1. **Sign-in URLs.** In Supabase → Authentication → URL Configuration, set the Site URL to `https://kain-two.vercel.app` and add `https://kain-two.vercel.app/auth/callback` to the redirect URLs. Keep `http://localhost:3000/auth/callback` if you want local sign-in too.
-2. **Google and Facebook.**
-   - Create a Google OAuth client and a Facebook app.
-   - Both use the redirect URI `https://xlogulbdjcqjenlkkmcy.supabase.co/auth/v1/callback`.
-   - Switch the providers on in Supabase → Authentication → Providers with their keys.
-   - Until then, the buttons explain that sign-in isn't switched on, and families can still use everything without an account.
-3. **Real prices.** Load dated market prices into `prices` (contributor, DA market or DA average tiers). Then set `sample_prices` to off in `app_flags`, and the "Sample data" labels disappear.
-4. **Redeploying.** After changes, run `npx vercel deploy --prod` from this folder. Database changes go out with `supabase db push`, and function changes with `supabase functions deploy log-purchase --use-api` (the project is linked).
+## 13. No backend (prototype)
+
+Kain is a prototype, so it has no server. All data is kept on the phone, and there's no Supabase project, sign-in or server to set up.
+
+| | First build (Supabase, commit `2a1aecf`) | Now |
+|---|---|---|
+| Prices and recipes | From Supabase, cached on the phone | Bundled with the app (the sample estimates), with "Sample data" labels |
+| Your purchase logs | On the phone, then shared through the `log-purchase` function | On the phone only. Close prices still become "Your log" prices for you. |
+| Plan settings, eatery menu, pots, sales | On the phone, synced to your account | On the phone only |
+| First screen | Sign in (Google, Facebook) or plan without an account | Welcome: pick family or eatery, no account |
+| Eatery | Needs an account | Works straight away |
+| Business plan (demo) | Saved to your account | Saved on the phone |
+| Keeping data safe | Your account | Settings → "Your data stays on this phone" → **Save a backup** (a `.json` file) and **Restore** |
+
+What changed:
+- **Removed:** the Supabase client, sign-in, the upload queue, the auth callback page, the `supabase/` folder (migration, seed SQL, Edge Function) and the database tests.
+- **Moved:** the ±30% price check now lives in `src/lib/log/price-check.ts`.
+- **Kept as-is:** the phone database layout, unused tables included, so a phone that ran the first build can open this one.
+- **Fixed:** the app no longer reloads the page when the connection comes back. Serwist did that by default, which would throw away what someone was typing on patchy signal.
+
+Sample prices and recipes come from `reference/mvp/data.js`. To change them, edit that data and run `node scripts/gen-seed.mjs`, which rewrites `src/lib/data/seed.json`.
+
+Tests: 61 unit tests, and 64 browser tests (backup and restore included).

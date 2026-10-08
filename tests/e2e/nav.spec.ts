@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { recordTransitions, screenTitle, settled, transitions } from './helpers';
-import { removeSeedUsers, seedEateryDay } from './seed';
-
-test.afterEach(removeSeedUsers);
+import { seedEateryDay } from './seed';
 
 test.describe('screen transitions', () => {
   test('push slides Week in, browser Back pops it, Today keeps its scroll', async ({ page }) => {
@@ -36,7 +34,7 @@ test.describe('screen transitions', () => {
     await settled(page, '/plan');
     await page.getByRole('link', { name: 'Edit budget' }).click();
     await settled(page, '/plan/setup');
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
     await settled(page, '/plan');
     expect(await transitions(page)).toEqual(['push-full', 'pop-full']);
     // Forward re-plays the push.
@@ -49,7 +47,7 @@ test.describe('screen transitions', () => {
     await recordTransitions(page);
     await page.goto('/plan/week');
     await settled(page, '/plan/week');
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
     await settled(page, '/plan');
     expect(await transitions(page)).toEqual(['pop']);
   });
@@ -115,13 +113,13 @@ test.describe('screen transitions', () => {
     expect(await transitions(page)).toEqual(['sheet-up', 'sheet-down']);
   });
 
-  test('sign in hands over to the app without leaving itself in history', async ({ page }) => {
+  test('the welcome screen hands over to the app without leaving itself in history', async ({ page }) => {
     await recordTransitions(page);
-    await page.goto('/signin');
-    await settled(page, '/signin');
-    await page.getByRole('link', { name: 'Plan meals without an account' }).click();
+    await page.goto('/welcome');
+    await settled(page, '/welcome');
+    await page.getByRole('button', { name: /For my family/ }).click();
     await settled(page, '/plan/setup');
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
     await settled(page, '/plan');
     expect(await transitions(page)).toEqual(['push-full', 'pop-full']);
   });

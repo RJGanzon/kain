@@ -97,7 +97,7 @@ test('without speech recognition the mic hides and typing still works', async ({
   await expect(page.getByRole('button', { name: 'Speak your purchase' })).toHaveCount(0);
 });
 
-test('a guest’s logs stay on the phone, waiting to move to an account', async ({ page }) => {
+test('logs stay on the phone', async ({ page }) => {
   await openLog(page);
   await page.getByRole('button', { name: 'isang dosenang itlog 102' }).click();
   await page.getByRole('button', { name: 'Add' }).click();
@@ -115,5 +115,6 @@ test('a guest’s logs stay on the phone, waiting to move to an account', async 
         };
       }),
   );
-  expect(queued).toBe(1);
+  // Nothing waits to upload: this build keeps everything on the phone.
+  expect(queued).toBe(0);
 });

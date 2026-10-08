@@ -20,8 +20,6 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: 'Kain', statusBarStyle: 'default' },
   icons: { apple: '/icons/apple-touch-icon.png' },
   formatDetection: { telephone: false },
-  // Lets tests tell whether this build talks to a backend.
-  other: process.env.NEXT_PUBLIC_SUPABASE_URL ? { 'kain-backend': '1' } : {},
 };
 
 export const viewport: Viewport = {

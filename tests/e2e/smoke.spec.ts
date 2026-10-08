@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { recordTransitions, settled } from './helpers';
-import { removeSeedUsers, seedEateryDay } from './seed';
-
-test.afterEach(removeSeedUsers);
+import { seedEateryDay } from './seed';
 
 /** Every screen and sheet loads and runs without a console error. */
 test('no console errors on any screen', async ({ page }) => {
@@ -10,8 +8,8 @@ test('no console errors on any screen', async ({ page }) => {
   const tabs = page.getByRole('navigation', { name: 'Main' });
 
   await page.goto('/');
-  await settled(page, '/signin');
-  await page.getByRole('link', { name: 'Plan meals without an account' }).click();
+  await settled(page, '/welcome');
+  await page.getByRole('button', { name: /For my family/ }).click();
   await settled(page, '/plan/setup');
   await page.getByRole('button', { name: 'More kids' }).click();
   await page.getByRole('button', { name: 'Build my plan' }).click();

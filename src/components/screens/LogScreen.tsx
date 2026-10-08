@@ -7,7 +7,6 @@ import { IngredientIcon } from '@/components/ui/IngredientIcon';
 import { Meter } from '@/components/ui/Meter';
 import { Pill } from '@/components/ui/Pill';
 import { manilaToday, shortDate } from '@/components/ui/PriceLabels';
-import { SyncNote } from '@/components/ui/SyncNote';
 import { cn } from '@/lib/cn';
 import { useCatalog } from '@/lib/data/catalog';
 import type { PurchaseLog } from '@/lib/data/db';
@@ -188,7 +187,6 @@ export function LogScreen() {
                   ? `${shortName(addedIng.name)} price added for ${market?.name ?? 'your market'}.`
                   : `${shortName(addedIng.name)} saved. The price looks unusual, so it won't be used.`}
               </span>
-              <SyncNote />
             </div>
           ) : null}
         </div>

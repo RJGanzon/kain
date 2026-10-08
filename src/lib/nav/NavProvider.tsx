@@ -2,9 +2,6 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useLayoutEffect, type ReactNode } from 'react';
-import { ensureAccountSynced } from '@/lib/auth/account';
-import { onSessionChange } from '@/lib/auth/session';
-import { startSync } from '@/lib/data/outbox';
 import { preloadEatery } from '@/lib/eatery/store';
 import { preloadLogs } from '@/lib/log/store';
 import { captureInstallPrompt } from '@/lib/pwa/install';
@@ -49,18 +46,11 @@ export function NavProvider({ children }: { children: ReactNode }) {
     initNav();
     preloadLogs();
     preloadEatery();
-    startSync();
     captureInstallPrompt();
-    const stop = onSessionChange((s) => {
-      if (s.session) ensureAccountSynced();
-    });
     document.documentElement.toggleAttribute('data-swipeback', swipeBackWanted());
     // Capture phase on window runs before Next.js's own popstate listener.
     window.addEventListener('popstate', onPopState, { capture: true });
-    return () => {
-      stop();
-      window.removeEventListener('popstate', onPopState, { capture: true });
-    };
+    return () => window.removeEventListener('popstate', onPopState, { capture: true });
   }, []);
 
   // Once the first screen is idle, load the other screens so no tap waits on the network.
